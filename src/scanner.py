@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from src.findings import normalize_findings
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,13 +44,24 @@ def run_json_scanner(command, allowed_exit_codes):
             f"Scanner returned invalid JSON: {process.stderr}"
         ) from exc
 
+    
     if not isinstance(data, dict):
-        raise RuntimeError("Expected a JSON object from scanner")
+        raise RuntimeError(
+            "Expected a JSON object from scanner"
+        )
 
     if data.get("errors"):
-        raise RuntimeError(f"Scanner reported errors: {data['errors']}")
+        raise RuntimeError(
+            f"Scanner reported errors: {data['errors']}"
+        )
+
+    if not isinstance(data.get("results"), list):
+        raise RuntimeError(
+            "Scanner JSON is missing a valid results list"
+        )
 
     return data
+
 
 
 def scan_file(file_path):
@@ -82,15 +94,36 @@ def scan_file(file_path):
     return {"bandit": bandit, "semgrep": semgrep}
 
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Scan Python code for security issues"
     )
-    parser.add_argument("path", help="Python file to scan")
+
+    parser.add_argument(
+        "path",
+        nargs="?",
+        help="Python file to scan"
+    )
+
+    parser.add_argument(
+        "--path",
+        dest="flag_path",
+        help="Python file to scan (named option)"
+    )
+
     args = parser.parse_args()
 
+    if bool(args.path) == bool(args.flag_path):
+        parser.error(
+            "Provide exactly one file path, either "
+            "positionally or using --path"
+        )
+
+    target = args.flag_path or args.path
+
     try:
-        results = scan_file(args.path)
+        results = scan_file(target)
     except (ValueError, RuntimeError) as exc:
         parser.exit(1, f"Error: {exc}\n")
 
@@ -108,6 +141,16 @@ def main():
         print(f"{name.capitalize()}: {len(findings)} findings")
 
     print(f"Reports saved to: {report_dir}")
+
+    unified = normalize_findings(results)
+
+    output = report_dir / "findings.json"
+    output.write_text(
+        json.dumps(unified, indent=2),
+        encoding="utf-8"
+    )
+
+    print(f"Unified findings: {len(unified)}")
 
 
 if __name__ == "__main__":
