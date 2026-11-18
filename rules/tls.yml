@@ -1,0 +1,15 @@
+rules:
+- id: tls-verification-disabled
+  languages:
+  - python
+  severity: WARNING
+  message: 'tls: review this security-sensitive operation; exploitability depends
+    on context.'
+  metadata:
+    category: security
+    confidence: MEDIUM
+    scope: Python/Flask/Django; local intraprocedural analysis
+    origin: project-authored
+  pattern-either:
+  - pattern: requests.get(..., verify=False, ...)
+  - pattern: requests.post(..., verify=False, ...)

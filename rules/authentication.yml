@@ -1,0 +1,13 @@
+rules:
+- id: jwt-signature-disabled
+  languages:
+  - python
+  severity: WARNING
+  message: 'authentication: review this security-sensitive operation; exploitability
+    depends on context.'
+  metadata:
+    category: security
+    confidence: MEDIUM
+    scope: Python/Flask/Django; local intraprocedural analysis
+    origin: project-authored
+  pattern: 'jwt.decode(..., options={..., "verify_signature": False, ...}, ...)'

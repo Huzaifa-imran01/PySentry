@@ -1,0 +1,15 @@
+rules:
+- id: weak-digest
+  languages:
+  - python
+  severity: WARNING
+  message: 'weak_cryptography: review this security-sensitive operation; exploitability
+    depends on context.'
+  metadata:
+    category: security
+    confidence: MEDIUM
+    scope: Python/Flask/Django; local intraprocedural analysis
+    origin: project-authored
+  pattern-either:
+  - pattern: hashlib.md5(...)
+  - pattern: hashlib.sha1(...)

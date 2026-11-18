@@ -1,0 +1,9 @@
+{
+  "rule_validation": "blocked",
+  "reason": "Semgrep engine socketpair Permission denied in sandbox",
+  "precision": null,
+  "recall": null,
+  "ai_quality": null,
+  "repair_correctness": null,
+  "no_coverage_improvement_claim": true
+}

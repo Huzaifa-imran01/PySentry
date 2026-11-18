@@ -1,0 +1,7 @@
+bandit==1.9.4
+semgrep==1.185.0
+pip-audit==2.10.1
+google-genai==3.4.0
+requests==2.34.2
+pytest==9.2.0
+PyYAML==6.0.3

@@ -1,0 +1,92 @@
+[
+  {
+    "category": "code_execution",
+    "rule": "insecure-eval",
+    "known_limit": "getattr(builtins, \"ev\" + \"al\")(user_input)",
+    "development": "benchmarks/development/code_execution.py"
+  },
+  {
+    "category": "command_injection",
+    "rule": "request-shell-command",
+    "known_limit": "execute_in_other_module(request.args.get(\"cmd\"))",
+    "development": "benchmarks/development/command_injection.py"
+  },
+  {
+    "category": "sql_injection",
+    "rule": "request-sql-query",
+    "known_limit": "query_from_other_module(cursor)",
+    "development": "benchmarks/development/sql_injection.py"
+  },
+  {
+    "category": "deserialization",
+    "rule": "unsafe-deserialization",
+    "known_limit": "custom_deserializer(payload)",
+    "development": "benchmarks/development/deserialization.py"
+  },
+  {
+    "category": "path_traversal",
+    "rule": "request-file-path",
+    "known_limit": "read_in_other_module(request.args.get(\"path\"))",
+    "development": "benchmarks/development/path_traversal.py"
+  },
+  {
+    "category": "ssrf",
+    "rule": "request-outbound-url",
+    "known_limit": "custom_http_client(request.args.get(\"url\"))",
+    "development": "benchmarks/development/ssrf.py"
+  },
+  {
+    "category": "web_output",
+    "rule": "request-unsafe-html",
+    "known_limit": "unsafe_renderer(request.args.get(\"html\"))",
+    "development": "benchmarks/development/web_output.py"
+  },
+  {
+    "category": "template_injection",
+    "rule": "request-template-code",
+    "known_limit": "custom_template_engine(request.args.get(\"template\"))",
+    "development": "benchmarks/development/template_injection.py"
+  },
+  {
+    "category": "weak_cryptography",
+    "rule": "weak-digest",
+    "known_limit": "custom_digest(payload)",
+    "development": "benchmarks/development/weak_cryptography.py"
+  },
+  {
+    "category": "tls",
+    "rule": "tls-verification-disabled",
+    "known_limit": "custom_client(url, insecure=True)",
+    "development": "benchmarks/development/tls.py"
+  },
+  {
+    "category": "credentials",
+    "rule": "hardcoded-password",
+    "known_limit": "settings_from_other_module()",
+    "development": "benchmarks/development/credentials.py"
+  },
+  {
+    "category": "authentication",
+    "rule": "jwt-signature-disabled",
+    "known_limit": "custom_token_decoder(token)",
+    "development": "benchmarks/development/authentication.py"
+  },
+  {
+    "category": "authorization",
+    "rule": "csrf-protection-disabled",
+    "known_limit": "def endpoint(request):\n    return Account.objects.get(id=request.GET.get(\"id\"))",
+    "development": "benchmarks/development/authorization.py"
+  },
+  {
+    "category": "business_logic",
+    "rule": "client-controlled-payment-amount",
+    "known_limit": "custom_checkout(request.args.get(\"amount\"))",
+    "development": "benchmarks/development/business_logic.py"
+  },
+  {
+    "category": "insecure_configuration",
+    "rule": "django-debug-enabled",
+    "known_limit": "DEBUG = bool(os.environ.get(\"DEBUG\"))",
+    "development": "benchmarks/development/insecure_configuration.py"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "split": "development",
+  "status": "not_measured",
+  "reason": "Native Semgrep engine blocked by sandbox socketpair permissions",
+  "precision": null,
+  "recall": null,
+  "ai_quality": null,
+  "repair_verification": {
+    "trusted_behavior_tests_passed": 5,
+    "arbitrary_generated_fixes_verified": false
+  }
+}

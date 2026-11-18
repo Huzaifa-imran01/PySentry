@@ -1,0 +1,40 @@
+rules:
+- id: request-unsafe-html
+  languages:
+  - python
+  severity: WARNING
+  message: 'web_output: review this security-sensitive operation; exploitability depends
+    on context.'
+  metadata:
+    category: security
+    confidence: MEDIUM
+    scope: Python/Flask/Django; local intraprocedural analysis
+    origin: project-authored
+  mode: taint
+  pattern-sources:
+  - pattern: flask.request.args.get(...)
+    exact: true
+  - pattern: flask.request.form.get(...)
+    exact: true
+  - pattern: flask.request.values.get(...)
+    exact: true
+  - pattern: flask.request.get_json(...)
+    exact: true
+  - pattern: flask.request.json[...]
+    exact: true
+  - pattern: flask.request.files[...].read(...)
+    exact: true
+  - pattern: $REQ.GET.get(...)
+    exact: true
+  - pattern: $REQ.POST.get(...)
+    exact: true
+  - pattern: $REQ.body
+    exact: true
+  pattern-sinks:
+  - pattern: markupsafe.Markup(...)
+  - pattern: django.utils.safestring.mark_safe(...)
+  pattern-sanitizers:
+  - pattern: markupsafe.escape(...)
+    exact: true
+  - pattern: html.escape(...)
+    exact: true

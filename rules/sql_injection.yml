@@ -1,0 +1,39 @@
+rules:
+- id: request-sql-query
+  languages:
+  - python
+  severity: WARNING
+  message: 'sql_injection: review this security-sensitive operation; exploitability
+    depends on context.'
+  metadata:
+    category: security
+    confidence: MEDIUM
+    scope: Python/Flask/Django; local intraprocedural analysis
+    origin: project-authored
+  mode: taint
+  pattern-sources:
+  - pattern: flask.request.args.get(...)
+    exact: true
+  - pattern: flask.request.form.get(...)
+    exact: true
+  - pattern: flask.request.values.get(...)
+    exact: true
+  - pattern: flask.request.get_json(...)
+    exact: true
+  - pattern: flask.request.json[...]
+    exact: true
+  - pattern: flask.request.files[...].read(...)
+    exact: true
+  - pattern: $REQ.GET.get(...)
+    exact: true
+  - pattern: $REQ.POST.get(...)
+    exact: true
+  - pattern: $REQ.body
+    exact: true
+  pattern-sinks:
+  - patterns:
+    - pattern: $DB.execute($QUERY, ...)
+    - focus-metavariable: $QUERY
+  - patterns:
+    - pattern: $DB.executemany($QUERY, ...)
+    - focus-metavariable: $QUERY

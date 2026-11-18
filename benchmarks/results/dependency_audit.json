@@ -1,0 +1,135 @@
+{
+  "status": "completed",
+  "reason": "audit_finished",
+  "packages": [
+    {
+      "name": "requests",
+      "version": "2.19.1",
+      "skip_reason": null
+    }
+  ],
+  "findings": [
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2018-28",
+      "aliases": [
+        "CVE-2018-18074",
+        "GHSA-x84v-xcm2-53pg"
+      ],
+      "fixed_versions": [
+        "2.20.0"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2018-28",
+      "aliases": [
+        "CVE-2018-18074",
+        "GHSA-x84v-xcm2-53pg"
+      ],
+      "fixed_versions": [
+        "2.20.0"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2023-74",
+      "aliases": [
+        "GHSA-j8r2-6x86-q33q",
+        "CVE-2023-32681"
+      ],
+      "fixed_versions": [
+        "2.31.0"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2023-74",
+      "aliases": [
+        "GHSA-j8r2-6x86-q33q",
+        "CVE-2023-32681"
+      ],
+      "fixed_versions": [
+        "2.31.0"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2026-1873",
+      "aliases": [
+        "GHSA-9wx4-h78v-vm56",
+        "CVE-2024-35195"
+      ],
+      "fixed_versions": [
+        "2.32.0"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2026-1872",
+      "aliases": [
+        "GHSA-9hjg-9r4m-mvj7",
+        "CVE-2024-47081"
+      ],
+      "fixed_versions": [
+        "2.32.4"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2026-2275",
+      "aliases": [
+        "CVE-2026-25645",
+        "GHSA-gc5v-m9x4-r6x2"
+      ],
+      "fixed_versions": [
+        "2.33.0"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2026-1873",
+      "aliases": [
+        "GHSA-9wx4-h78v-vm56",
+        "CVE-2024-35195"
+      ],
+      "fixed_versions": [
+        "2.32.0"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2026-1872",
+      "aliases": [
+        "GHSA-9hjg-9r4m-mvj7",
+        "CVE-2024-47081"
+      ],
+      "fixed_versions": [
+        "2.32.4"
+      ]
+    },
+    {
+      "package": "requests",
+      "version": "2.19.1",
+      "advisory_id": "PYSEC-2026-2275",
+      "aliases": [
+        "CVE-2026-25645",
+        "GHSA-gc5v-m9x4-r6x2"
+      ],
+      "fixed_versions": [
+        "2.33.0"
+      ]
+    }
+  ],
+  "scope": "explicit declared versions only; transitive coverage requires a complete lock export",
+  "input": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\dependencies\\vulnerable.txt"
+}

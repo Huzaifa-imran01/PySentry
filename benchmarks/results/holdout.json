@@ -1,0 +1,193 @@
+{
+  "split": "holdout",
+  "bundle_sha256": "f53f1c2b9a0428131567ada5503b32871c311ad900cd694fd541aca2033454c5",
+  "timestamp": "2026-11-18T17:44:27.379214+00:00",
+  "scope": "Semgrep rules only; not Bandit accuracy or general application security",
+  "status": "completed",
+  "metrics": {
+    "true_positives": 15,
+    "false_positives": 0,
+    "false_negatives": 15,
+    "precision": 1.0,
+    "recall": 0.5,
+    "supported_case_recall": 1.0,
+    "known_limit_cases": 15,
+    "known_limit_misses": 15
+  },
+  "scan_completeness": 1.0,
+  "by_rule": {
+    "client-controlled-payment-amount": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "csrf-protection-disabled": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "django-debug-enabled": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "hardcoded-password": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "insecure-eval": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "jwt-signature-disabled": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "request-file-path": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "request-outbound-url": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "request-shell-command": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "request-sql-query": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "request-template-code": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "request-unsafe-html": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "tls-verification-disabled": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "unsafe-deserialization": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "weak-digest": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    }
+  },
+  "quality": {
+    "explanation_accuracy": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "usable_fix_rate": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "scanner_improvement": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "behavior_contract_pass": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "note": "Human labels/explicit verification records only; syntax validity is reported separately."
+  }
+}

@@ -1,0 +1,9 @@
+[
+  {
+    "case": "replace-with-reviewed-case-id",
+    "explanation_correct": null,
+    "fix_usable": null,
+    "scanner_improved": null,
+    "behavior_passed": null
+  }
+]

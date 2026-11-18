@@ -1,0 +1,77 @@
+{
+  "coverage": {
+    "root": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures",
+    "status": "partial",
+    "files": [
+      {
+        "path": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures\\insecure_sample.py",
+        "status": "partial",
+        "source_sha256": "c40a014fa4033da6917067d65f2d3903af681aae4ca90b91b9ca10e7e11cb8d7",
+        "scanners": {
+          "bandit": "completed",
+          "semgrep": "failed"
+        },
+        "errors": {
+          "semgrep": "Scanner could not run: Command '['C:\\\\Users\\\\Test\\\\Documents\\\\Projects\\\\secure-code-review-agent\\\\.venv\\\\Scripts\\\\semgrep.exe', 'scan', '--config', 'C:\\\\Users\\\\Test\\\\Documents\\\\Projects\\\\secure-code-review-agent\\\\rules\\\\code_execution.yml', '--json', '--metrics=off', '--disable-version-check', '--no-git-ignore', '--max-target-bytes=0', '--jobs=1', 'C:\\\\Users\\\\Test\\\\Documents\\\\Projects\\\\secure-code-review-agent\\\\tests\\\\fixtures\\\\insecure_sample.py']' timed out after 5 seconds"
+        }
+      }
+    ],
+    "excluded": [],
+    "eligible_files": 1,
+    "completed_files": 0,
+    "completeness": 0.0,
+    "limits": {
+      "max_bytes": 1000000,
+      "per_scanner_seconds": 5,
+      "max_files": 1000,
+      "total_seconds": 20
+    }
+  },
+  "findings": [
+    {
+      "scanner": "bandit",
+      "rule_id": "B404",
+      "severity": "LOW",
+      "message": "Consider possible security implications associated with the subprocess module.",
+      "file": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures\\insecure_sample.py",
+      "line": 2,
+      "confidence": "HIGH",
+      "source_sha256": "c40a014fa4033da6917067d65f2d3903af681aae4ca90b91b9ca10e7e11cb8d7",
+      "scan_root": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures",
+      "statement_sha256": "9d97d469cf8d66465563e1e22c6dab3b6107819aba2d9956c7080016c1ab9c1b",
+      "scope": "",
+      "end_line": 2,
+      "identity_precision": "statement_and_scope; identical statements in the same scope may coincide"
+    },
+    {
+      "scanner": "bandit",
+      "rule_id": "B307",
+      "severity": "MEDIUM",
+      "message": "Use of possibly insecure function - consider using safer ast.literal_eval.",
+      "file": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures\\insecure_sample.py",
+      "line": 6,
+      "confidence": "HIGH",
+      "source_sha256": "c40a014fa4033da6917067d65f2d3903af681aae4ca90b91b9ca10e7e11cb8d7",
+      "scan_root": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures",
+      "statement_sha256": "c1dcb81d0200ef97966e56df2aae2f66b6b244a17903cdeef84845f8ce715ac2",
+      "scope": "evaluate_expression",
+      "end_line": 6,
+      "identity_precision": "statement_and_scope; identical statements in the same scope may coincide"
+    },
+    {
+      "scanner": "bandit",
+      "rule_id": "B602",
+      "severity": "HIGH",
+      "message": "subprocess call with shell=True identified, security issue.",
+      "file": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures\\insecure_sample.py",
+      "line": 10,
+      "confidence": "HIGH",
+      "source_sha256": "c40a014fa4033da6917067d65f2d3903af681aae4ca90b91b9ca10e7e11cb8d7",
+      "scan_root": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\tests\\fixtures",
+      "statement_sha256": "3daf27b9aee3a86f2d1f45941f91fe1d169bd3d425cfda7f3972c6778db8bf2c",
+      "scope": "execute_command",
+      "end_line": 10,
+      "identity_precision": "statement_and_scope; identical statements in the same scope may coincide"
+    }
+  ]
+}
