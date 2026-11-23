@@ -1,0 +1,188 @@
+rules:
+- id: framework-files
+  languages:
+  - python
+  severity: WARNING
+  message: Review request-controlled data reaching this files operation.
+  mode: taint
+  pattern-sources:
+  - patterns:
+    - pattern-inside: '$APP = fastapi.FastAPI(...)
+
+        ...'
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T, ...):\n    ..."
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - metavariable-regex:
+        metavariable: $T
+        regex: ^(str|bytes|int|float|dict|list)$
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.APIRouter(...)
+
+        ...'
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T, ...):\n    ..."
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - metavariable-regex:
+        metavariable: $T
+        regex: ^(str|bytes|int|float|dict|list)$
+    - pattern: $P
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: starlette.requests.Request, ...):\n    ..."
+    - pattern: $R.query_params.get(...)
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: starlette.requests.Request, ...):\n    ..."
+    - pattern: $R.query_params[...]
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: starlette.requests.Request, ...):\n    ..."
+    - pattern: $R.path_params[...]
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: starlette.requests.Request, ...):\n    ..."
+    - pattern: $R.json()
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: starlette.requests.Request, ...):\n    ..."
+    - pattern: $R.body()
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: starlette.requests.Request, ...):\n    ..."
+    - pattern: $R.form()
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $F: fastapi.UploadFile, ...):\n    ..."
+    - pattern: $F.read(...)
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: fastapi.Request, ...):\n    ..."
+    - pattern: $R.query_params.get(...)
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: fastapi.Request, ...):\n    ..."
+    - pattern: $R.query_params[...]
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: fastapi.Request, ...):\n    ..."
+    - pattern: $R.path_params[...]
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: fastapi.Request, ...):\n    ..."
+    - pattern: $R.body()
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: fastapi.Request, ...):\n    ..."
+    - pattern: $R.json()
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $R: fastapi.Request, ...):\n    ..."
+    - pattern: $R.form()
+  - patterns:
+    - pattern-inside: '$APP = fastapi.FastAPI(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Form(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.FastAPI(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Body(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.FastAPI(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Query(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.FastAPI(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Path(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.FastAPI(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "class $BODY(pydantic.BaseModel):\n    ...\n..."
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $BODY, ...):\n    ..."
+    - pattern: $P.$FIELD
+  - patterns:
+    - pattern-inside: '$APP = fastapi.APIRouter(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Form(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.APIRouter(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Body(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.APIRouter(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Query(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.APIRouter(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $T = fastapi.Path(...), ...):\n\
+        \    ..."
+    - pattern: $P
+  - patterns:
+    - pattern-inside: '$APP = fastapi.APIRouter(...)
+
+        ...'
+    - metavariable-regex:
+        metavariable: $M
+        regex: ^(get|post|put|patch|delete)$
+    - pattern-inside: "class $BODY(pydantic.BaseModel):\n    ...\n..."
+    - pattern-inside: "@$APP.$M(...)\ndef $F(..., $P: $BODY, ...):\n    ..."
+    - pattern: $P.$FIELD
+  pattern-sinks:
+  - patterns:
+    - pattern: pathlib.Path($X).read_bytes()
+    - focus-metavariable: $X
+  - patterns:
+    - pattern: pathlib.Path($X).read_text(...)
+    - focus-metavariable: $X
+  - patterns:
+    - pattern: pathlib.Path($X).write_bytes(...)
+    - focus-metavariable: $X
+  - patterns:
+    - pattern: pathlib.Path($X).write_text(...)
+    - focus-metavariable: $X
+  - patterns:
+    - pattern-inside: "def $FUNC(..., $A: tarfile.TarFile, ...):\n    ..."
+    - pattern: $A.extractall(path=$X, ...)
+    - focus-metavariable: $X

@@ -1,0 +1,8 @@
+rules:
+- id: session-transport
+  languages:
+  - python
+  message: Review insecure session_transport
+  pattern: starlette.middleware.sessions.SessionMiddleware(..., https_only=False,
+    ...)
+  severity: WARNING

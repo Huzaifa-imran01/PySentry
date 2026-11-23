@@ -104,13 +104,13 @@ def test_scan_records_fingerprint_and_detects_changes(tmp_path):
     from src.scanner import scan_file
     source = tmp_path / "sample.py"
     source.write_bytes(b"eval(user_input)\n")
-    with patch("src.scanner.run_json_scanner", side_effect=[{"results": []}, {"results": []}]):
+    with patch("src.scanner.run_json_scanner", side_effect=[{"results": [], "metrics":{str(source):{}}}, {"results": [], "paths":{"scanned":[str(source)]}}]):
         result = scan_file(source)
     assert result["bandit"]["source_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
 
     def changed_scan(*args, **kwargs):
         source.write_bytes(b"changed = True\n")
-        return {"results": []}
+        return {"results": [], "metrics":{str(source):{}}, "paths":{"scanned":[str(source)]}}
 
     with patch("src.scanner.run_json_scanner", side_effect=changed_scan):
         with pytest.raises(RuntimeError, match="Source changed"):

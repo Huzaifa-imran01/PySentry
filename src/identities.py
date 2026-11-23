@@ -17,6 +17,9 @@ def enrich_identity(finding, raw):
     scope=".".join(n.name for n in sorted(scopes,key=lambda n:n.lineno))
     dump=ast.dump(node,include_attributes=False)
     finding["statement_sha256"]=hashlib.sha256(dump.encode()).hexdigest()
+    finding["statement_line"] = node.lineno
+    finding["ambiguous_site"] = (sum(isinstance(n, ast.Call) for n in ast.walk(node)) > 1 or
+                                 sum(n.lineno == node.lineno and n.end_lineno == node.end_lineno for n in nodes) > 1)
     finding["scope"]=scope
     finding["end_line"]=node.end_lineno
     finding["identity_precision"]="statement_and_scope; identical statements in the same scope may coincide"

@@ -1,0 +1,88 @@
+{
+  "results": {
+    "profiles/basic/rules/weak_cryptography.yml": {
+      "checks": {
+        "weak-digest": {
+          "passed": true,
+          "matches": {
+            "profiles/basic/benchmarks/development/weak_cryptography.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/basic/rules/tls.yml": {
+      "checks": {
+        "tls-verification-disabled": {
+          "passed": true,
+          "matches": {
+            "profiles/basic/benchmarks/development/tls.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/basic/rules/deserialization.yml": {
+      "checks": {
+        "unsafe-deserialization": {
+          "passed": true,
+          "matches": {
+            "profiles/basic/benchmarks/development/deserialization.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/basic/rules/code_execution.yml": {
+      "checks": {
+        "insecure-eval": {
+          "passed": true,
+          "matches": {
+            "profiles/basic/benchmarks/development/code_execution.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    }
+  },
+  "fixtest_results": {},
+  "config_missing_tests": [],
+  "config_missing_fixtests": [],
+  "config_with_errors": []
+}

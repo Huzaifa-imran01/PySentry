@@ -1,0 +1,13 @@
+title = "Secure review: embedded detectors plus application credential assignments"
+[extend]
+useDefault = true
+[[rules]]
+id = "review-credential-literal"
+description = "Literal assigned to credential field"
+regex = '''(?i)(?:password|passwd|api[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*["']([^"'\s]{6,})["']'''
+secretGroup = 1
+[[rules.allowlists]]
+regexTarget = "secret"
+regexes = ['''^(?:REDACTED|<[^>]+>|\$\{[^}]+\})$''']
+[[allowlists]]
+paths = ['''(?:^|[/\\])(?:\.git|\.venv|venv|node_modules|__pycache__|reports|build|dist)(?:[/\\]|$)''']

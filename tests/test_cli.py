@@ -24,7 +24,7 @@ def test_cli_accepts_path_option(monkeypatch, tmp_path):
 
     scanner.main()
 
-    assert (tmp_path / "reports" / "findings.json").exists()
+    assert len(list((tmp_path / "reports").glob("*/findings.json"))) == 1
 
 
 @pytest.mark.parametrize("arguments", [

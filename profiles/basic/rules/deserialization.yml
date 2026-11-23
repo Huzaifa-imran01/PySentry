@@ -1,0 +1,17 @@
+rules:
+- id: unsafe-deserialization
+  languages:
+  - python
+  severity: WARNING
+  message: 'deserialization: review this security-sensitive operation; exploitability
+    depends on context.'
+  metadata:
+    category: security
+    confidence: MEDIUM
+    scope: Python/Flask/Django; local intraprocedural analysis
+    origin: project-authored
+  pattern-either:
+  - pattern: pickle.loads(...)
+  - pattern: pickle.load(...)
+  - pattern: yaml.unsafe_load(...)
+  - pattern: yaml.load(..., Loader=yaml.Loader, ...)

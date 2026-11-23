@@ -1,0 +1,156 @@
+name: Review agent checks
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: '33 4 * * 1'
+permissions:
+  contents: read
+env:
+  PYTHONUTF8: '1'
+  SEMGREP_SEND_METRICS: 'off'
+  GEMINI_API_KEY: ''
+jobs:
+  unit:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-review
+      - name: Prepare results directory
+        run: python -c "from pathlib import Path; Path('ci-results').mkdir(exist_ok=True)"
+      - name: Run deterministic tests
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then prefix=(xvfb-run -a); else prefix=(); fi
+          "${prefix[@]}" python -m pytest tests --ignore=tests/test_native_tools.py --ignore=tests/test_run_contract.py --junitxml=ci-tests.xml
+      - name: Preserve test outcomes without captured output
+        if: always()
+        run: python scripts/summarize_ci_tests.py ci-tests.xml ci-results/tests.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: unit-${{ matrix.os }}
+          path: ci-results/
+          retention-days: 7
+  rules:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-review
+      - name: Prepare results directory
+        run: python -c "from pathlib import Path; Path('ci-results').mkdir(exist_ok=True)"
+      - name: Validate each annotated profile and measure the holdout
+        shell: bash
+        run: |
+          for profile in basic standard deep; do
+            python -m src.benchmark --profile "$profile" --validate
+            python -c "from src.rule_validation import profile_root; import shutil,json; dest=shutil.copyfile(profile_root('$profile')/'benchmarks/results/holdout.json','ci-results/$profile.json'); assert json.load(open(dest))['metrics']['supported_case_recall']==1.0, 'Supported holdout case missed'"
+          done
+      - name: Preserve test outcomes without captured output
+        if: always()
+        run: python scripts/summarize_ci_tests.py ci-tests.xml ci-results/tests.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: rules-${{ matrix.os }}
+          path: ci-results/
+          retention-days: 7
+  integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-review
+      - name: Prepare results directory
+        run: python -c "from pathlib import Path; Path('ci-results').mkdir(exist_ok=True)"
+      - name: Test real directory and history detection
+        env:
+          REVIEW_NATIVE_TESTS: '1'
+        run: python -m pytest tests/test_native_tools.py -k "worktree or native_prompt" --junitxml=ci-tests.xml
+      - name: Preserve test outcomes without captured output
+        if: always()
+        run: python scripts/summarize_ci_tests.py ci-tests.xml ci-results/tests.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: integration-${{ matrix.os }}
+          path: ci-results/
+          retention-days: 7
+  policy:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-review
+      - name: Prepare results directory
+        run: python -c "from pathlib import Path; Path('ci-results').mkdir(exist_ok=True)"
+      - name: Exercise CLI and failure-path policy contracts
+        env:
+          REVIEW_NATIVE_TESTS: '1'
+          REVIEW_ARTIFACTS: ci-results
+        run: python -m pytest tests/test_run_contract.py tests/test_native_tools.py -k "not worktree and not native_prompt and not lock_live" --junitxml=ci-tests.xml
+      - name: Preserve test outcomes without captured output
+        if: always()
+        run: python scripts/summarize_ci_tests.py ci-tests.xml ci-results/tests.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: policy-${{ matrix.os }}
+          path: ci-results/
+          retention-days: 7
+  advisories:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-review
+      - name: Prepare results directory
+        run: python -c "from pathlib import Path; Path('ci-results').mkdir(exist_ok=True)"
+      - name: Query advisory service for a controlled lockfile
+        env:
+          REVIEW_NATIVE_TESTS: '1'
+          REVIEW_LIVE_ADVISORIES: '1'
+        run: python -m pytest tests/test_native_tools.py -k lock_live --junitxml=ci-tests.xml
+      - name: Preserve test outcomes without captured output
+        if: always()
+        run: python scripts/summarize_ci_tests.py ci-tests.xml ci-results/tests.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: advisories-${{ matrix.os }}
+          path: ci-results/
+          retention-days: 7

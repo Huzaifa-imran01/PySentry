@@ -71,7 +71,11 @@ def get_code_context(finding):
 
 def review_finding(finding, code_context, api_key=None, model=MODEL):
     """Review scanner evidence using an explicitly supplied run-local credential."""
-    prompt = json.dumps({"finding": finding, "source_code": code_context})
+    from .secrets_scan import cloud_context, screen_prompt, safe_fields
+    metadata = {k:finding.get(k) for k in ("scanner","rule_id","line","severity","confidence")}
+    metadata["message"] = safe_fields({"rule_id":metadata["rule_id"],"message":finding.get("message","")})["message"]
+    prompt = json.dumps({"finding":metadata, "source_code":cloud_context(code_context)})
+    screen_prompt(prompt)
     text = generate(api_key, model, prompt, schema=REVIEW_SCHEMA, system=(
         "You are a Python security reviewer. Analyze only the reported finding. "
         "Explain the issue and impact; preserve intended behavior where possible. "
@@ -96,7 +100,7 @@ def review_finding(finding, code_context, api_key=None, model=MODEL):
                 f"Missing or invalid AI field: {key}"
             )
 
-    return review
+    return safe_fields(review)
 
 
 def classify_fix(review):
@@ -146,50 +150,9 @@ def check_fix(review):
 def group_duplicate_findings(findings):
     """Group known duplicate vulnerabilities across scanners."""
 
-    groups = []
-    seen = {}
-
-    for finding in findings:
-        key = None
-
-        if isinstance(finding, dict):
-            scanner = finding.get("scanner")
-            rule = str(finding.get("rule_id", "")).split(".")[-1]
-
-            is_eval = (
-                (scanner == "bandit" and rule == "B307")
-                or
-                (scanner == "semgrep" and rule == "insecure-eval")
-            )
-
-            if (
-                is_eval
-                and finding.get("file")
-                and finding.get("line") is not None
-                and finding.get("source_sha256")
-            ):
-                key = (
-                    "unsafe_eval",
-                    finding["file"],
-                    finding["line"],
-                    finding["source_sha256"],
-                )
-
-        if key is not None and key in seen:
-            seen[key]["related_findings"].append(finding)
-            continue
-
-        group = {
-            "primary": finding,
-            "related_findings": [finding],
-        }
-
-        groups.append(group)
-
-        if key is not None:
-            seen[key] = group
-
-    return groups
+    from .issues import logical_issues
+    return [{"primary":issue["evidence"][0],"related_findings":issue["evidence"]}
+            for issue in logical_issues(findings)]
 
 
 def review_all_findings(findings, limit=5, api_key=None, model=MODEL):
@@ -234,12 +197,17 @@ def review_all_findings(findings, limit=5, api_key=None, model=MODEL):
             TypeError,
             RuntimeError,
         ) as exc:
+            provider_reason = getattr(exc,"reason",None)
+            public_error = provider_reason if provider_reason in {
+                "authentication_failed","permission_denied","quota_or_rate_limit","service_unavailable",
+                "model_unavailable","network_error","invalid_request_or_credential","provider_error",
+                "sdk_not_installed","empty_or_blocked_response","no_key"} else type(exc).__name__
             results.append({
                 "index": index,
                 "finding": finding,
                 "related_findings": group["related_findings"],
-                "status": "failed",
-                "error": str(exc).replace(api_key, "[REDACTED]") if api_key else str(exc),
+                "status": "skipped" if str(exc)=="cloud_context_redaction_incomplete" else "failed",
+                "error": "cloud_context_redaction_incomplete" if str(exc)=="cloud_context_redaction_incomplete" else public_error,
                 "fix_status": "not_available",
                 "verification_status": "not_verified",
             })
@@ -250,16 +218,28 @@ def review_all_findings(findings, limit=5, api_key=None, model=MODEL):
 def main():
     """Standalone review of existing findings; scanning CLI is the primary entry point."""
     import argparse
-    from src.reporting import ai_report, save_json
+    from src.reporting import ai_report, save_json, load_report
     parser = argparse.ArgumentParser(description="Review existing findings with optional Gemini")
     parser.add_argument("--no-llm", action="store_true")
     parser.add_argument("--api-key-env", help="Consume a key from this environment variable")
     parser.add_argument("--model", default=MODEL)
+    parser.add_argument("--report", required=True, type=Path, help="Combined report or run directory to review")
     args = parser.parse_args()
-    findings = json.loads((ROOT / "reports" / "findings.json").read_text(encoding="utf-8"))
+    path = args.report / "report.json" if args.report.is_dir() else args.report
+    try:
+        selected = load_report(path)
+        if selected.get("run_status") == "running":
+            parser.error("Select a finished run")
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    findings = selected["findings"]
     key, reason = prepare_ai(args.no_llm, args.api_key_env, args.model)
     report = ai_report(findings, key, reason, args.model)
-    save_json(ROOT / "reports" / "ai_reviews.json", report, key)
+    from uuid import uuid4
+    output = path.parent / f"ai_review_{uuid4().hex}.json"
+    report.update(run_id=selected.get("run_id"), source_report=str(path.resolve()))
+    save_json(output, report, key)
+    print(f"Review saved to {output}")
     print(f"Reviews completed: {report['reviewed']}; failed: {report['failed']}; {report['reason']}")
 
 

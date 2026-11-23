@@ -25,7 +25,7 @@ def normalize_findings(reports):
             "message": extra.get("message", ""),
             "file": issue.get("path", ""),
             "line": start.get("line"),
-            "confidence": None,
+            "confidence": extra.get("metadata", {}).get("confidence"),
         })
 
     return findings

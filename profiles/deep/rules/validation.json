@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "bundle_sha256": "32947cf1fecd1cb8fa3a47c1496ae90289138fcd52709f25d1b2192aeb71ec29",
+  "profile": "deep",
+  "engine_version": "1.185.0",
+  "expected_rules": 23,
+  "tested_rules": 23,
+  "timestamp": "2026-11-23T05:04:49.666263+00:00",
+  "reason": null
+}

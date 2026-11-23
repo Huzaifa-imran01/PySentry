@@ -1,0 +1,85 @@
+{
+  "profile": "basic",
+  "fixture_sha256": "93108c73d54f273c38610629b919aa5c1d16eee0c7f4ffc43a51b182adc84966",
+  "split": "holdout",
+  "bundle_sha256": "5203124e3851547977d5e423943f32cfc66b727383b89075bebb62d280059955",
+  "timestamp": "2026-11-23T05:02:55.277023+00:00",
+  "scope": "Semgrep rules only; not Bandit accuracy or general application security",
+  "status": "completed",
+  "metrics": {
+    "true_positives": 4,
+    "false_positives": 0,
+    "false_negatives": 4,
+    "precision": 1.0,
+    "recall": 0.5,
+    "supported_case_recall": 1.0,
+    "known_limit_cases": 4,
+    "known_limit_misses": 4
+  },
+  "scan_completeness": 1.0,
+  "by_rule": {
+    "insecure-eval": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "tls-verification-disabled": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "unsafe-deserialization": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    },
+    "weak-digest": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "precision": 1.0,
+      "recall": 0.5,
+      "supported_case_recall": 1.0,
+      "known_limit_cases": 1,
+      "known_limit_misses": 1
+    }
+  },
+  "quality": {
+    "explanation_accuracy": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "usable_fix_rate": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "scanner_improvement": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "behavior_contract_pass": {
+      "labelled": 0,
+      "passed": 0,
+      "rate": null
+    },
+    "note": "Human labels/explicit verification records only; syntax validity is reported separately."
+  }
+}

@@ -1,294 +1,291 @@
 {
-  "config_missing_tests": [],
-  "config_missing_fixtests": [],
-  "config_with_errors": [],
   "results": {
-    "rules\\authentication.yml": {
-      "checks": {
-        "jwt-signature-disabled": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\authentication.py": {
-              "expected_lines": [
-                9,
-                13
-              ],
-              "reported_lines": [
-                9,
-                13
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\authorization.yml": {
-      "checks": {
-        "csrf-protection-disabled": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\authorization.py": {
-              "expected_lines": [
-                9,
-                15
-              ],
-              "reported_lines": [
-                9,
-                15
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\business_logic.yml": {
-      "checks": {
-        "client-controlled-payment-amount": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\business_logic.py": {
-              "expected_lines": [
-                9,
-                14
-              ],
-              "reported_lines": [
-                9,
-                14
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\code_execution.yml": {
-      "checks": {
-        "insecure-eval": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\code_execution.py": {
-              "expected_lines": [
-                9,
-                13
-              ],
-              "reported_lines": [
-                9,
-                13
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\command_injection.yml": {
-      "checks": {
-        "request-shell-command": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\command_injection.py": {
-              "expected_lines": [
-                9,
-                14
-              ],
-              "reported_lines": [
-                9,
-                14
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\credentials.yml": {
-      "checks": {
-        "hardcoded-password": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\credentials.py": {
-              "expected_lines": [
-                9,
-                13
-              ],
-              "reported_lines": [
-                9,
-                13
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\deserialization.yml": {
-      "checks": {
-        "unsafe-deserialization": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\deserialization.py": {
-              "expected_lines": [
-                9,
-                13
-              ],
-              "reported_lines": [
-                9,
-                13
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\insecure_configuration.yml": {
-      "checks": {
-        "django-debug-enabled": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\insecure_configuration.py": {
-              "expected_lines": [
-                9,
-                13
-              ],
-              "reported_lines": [
-                9,
-                13
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\path_traversal.yml": {
-      "checks": {
-        "request-file-path": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\path_traversal.py": {
-              "expected_lines": [
-                9,
-                14
-              ],
-              "reported_lines": [
-                9,
-                14
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\sql_injection.yml": {
-      "checks": {
-        "request-sql-query": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\sql_injection.py": {
-              "expected_lines": [
-                9,
-                14
-              ],
-              "reported_lines": [
-                9,
-                14
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\ssrf.yml": {
-      "checks": {
-        "request-outbound-url": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\ssrf.py": {
-              "expected_lines": [
-                9,
-                14
-              ],
-              "reported_lines": [
-                9,
-                14
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\template_injection.yml": {
-      "checks": {
-        "request-template-code": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\template_injection.py": {
-              "expected_lines": [
-                9,
-                14
-              ],
-              "reported_lines": [
-                9,
-                14
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\tls.yml": {
-      "checks": {
-        "tls-verification-disabled": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\tls.py": {
-              "expected_lines": [
-                9,
-                13
-              ],
-              "reported_lines": [
-                9,
-                13
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\weak_cryptography.yml": {
-      "checks": {
-        "weak-digest": {
-          "passed": true,
-          "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\weak_cryptography.py": {
-              "expected_lines": [
-                9,
-                13
-              ],
-              "reported_lines": [
-                9,
-                13
-              ]
-            }
-          },
-          "errors": []
-        }
-      }
-    },
-    "rules\\web_output.yml": {
+    "rules/web_output.yml": {
       "checks": {
         "request-unsafe-html": {
           "passed": true,
           "matches": {
-            "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\development\\web_output.py": {
+            "benchmarks/development/web_output.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/weak_cryptography.yml": {
+      "checks": {
+        "weak-digest": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/weak_cryptography.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/tls.yml": {
+      "checks": {
+        "tls-verification-disabled": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/tls.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/template_injection.yml": {
+      "checks": {
+        "request-template-code": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/template_injection.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/ssrf.yml": {
+      "checks": {
+        "request-outbound-url": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/ssrf.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/sql_injection.yml": {
+      "checks": {
+        "request-sql-query": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/sql_injection.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/path_traversal.yml": {
+      "checks": {
+        "request-file-path": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/path_traversal.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/insecure_configuration.yml": {
+      "checks": {
+        "django-debug-enabled": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/insecure_configuration.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/deserialization.yml": {
+      "checks": {
+        "unsafe-deserialization": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/deserialization.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/credentials.yml": {
+      "checks": {
+        "hardcoded-password": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/credentials.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/command_injection.yml": {
+      "checks": {
+        "request-shell-command": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/command_injection.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/code_execution.yml": {
+      "checks": {
+        "insecure-eval": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/code_execution.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/business_logic.yml": {
+      "checks": {
+        "client-controlled-payment-amount": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/business_logic.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/authorization.yml": {
+      "checks": {
+        "csrf-protection-disabled": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/authorization.py": {
+              "expected_lines": [
+                9,
+                15
+              ],
+              "reported_lines": [
+                9,
+                15
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "rules/authentication.yml": {
+      "checks": {
+        "jwt-signature-disabled": {
+          "passed": true,
+          "matches": {
+            "benchmarks/development/authentication.py": {
               "expected_lines": [
                 9,
                 13
@@ -304,5 +301,8 @@
       }
     }
   },
-  "fixtest_results": {}
+  "fixtest_results": {},
+  "config_missing_tests": [],
+  "config_missing_fixtests": [],
+  "config_with_errors": []
 }

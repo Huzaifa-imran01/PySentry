@@ -1,0 +1,16 @@
+name: Set up review agent
+description: Install the supported interpreter, agent requirements and verified external tools
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: '3.12'
+    - name: Install agent and pinned external tools
+      shell: bash
+      run: |
+        python -m venv .venv
+        if [[ "$RUNNER_OS" == "Windows" ]]; then bin=".venv/Scripts"; else bin=".venv/bin"; fi
+        "$bin/python" -m pip install -r requirements-agent.txt
+        "$bin/python" scripts/install_scanners.py
+        "$bin/python" -c "from pathlib import Path; print(Path('$bin').resolve())" >> "$GITHUB_PATH"

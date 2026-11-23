@@ -1,0 +1,478 @@
+{
+  "results": {
+    "profiles/deep/rules/web_output.yml": {
+      "checks": {
+        "request-unsafe-html": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/web_output.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/weak_cryptography.yml": {
+      "checks": {
+        "weak-digest": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/weak_cryptography.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/tls.yml": {
+      "checks": {
+        "tls-verification-disabled": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/tls.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/template_injection.yml": {
+      "checks": {
+        "request-template-code": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/template_injection.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/ssrf.yml": {
+      "checks": {
+        "request-outbound-url": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/ssrf.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/sql_injection.yml": {
+      "checks": {
+        "request-sql-query": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/sql_injection.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/session_transport.yml": {
+      "checks": {
+        "session-transport": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/session_transport.py": {
+              "expected_lines": [
+                5
+              ],
+              "reported_lines": [
+                5
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/path_traversal.yml": {
+      "checks": {
+        "request-file-path": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/path_traversal.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/password_hasher.yml": {
+      "checks": {
+        "password-hasher": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/password_hasher.py": {
+              "expected_lines": [
+                5
+              ],
+              "reported_lines": [
+                5
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/insecure_configuration.yml": {
+      "checks": {
+        "django-debug-enabled": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/insecure_configuration.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/framework_yaml.yml": {
+      "checks": {
+        "framework-yaml": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/framework_yaml.py": {
+              "expected_lines": [
+                16,
+                23
+              ],
+              "reported_lines": [
+                16,
+                23
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/framework_url.yml": {
+      "checks": {
+        "framework-url": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/framework_url.py": {
+              "expected_lines": [
+                16,
+                23,
+                37,
+                44
+              ],
+              "reported_lines": [
+                16,
+                23,
+                37,
+                44
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/framework_template.yml": {
+      "checks": {
+        "framework-template": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/framework_template.py": {
+              "expected_lines": [
+                16,
+                23,
+                34
+              ],
+              "reported_lines": [
+                16,
+                23,
+                34
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/framework_sql.yml": {
+      "checks": {
+        "framework-sql": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/framework_sql.py": {
+              "expected_lines": [
+                16,
+                23,
+                35
+              ],
+              "reported_lines": [
+                16,
+                23,
+                35
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/framework_shell.yml": {
+      "checks": {
+        "framework-shell": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/framework_shell.py": {
+              "expected_lines": [
+                16,
+                23
+              ],
+              "reported_lines": [
+                16,
+                23
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/framework_files.yml": {
+      "checks": {
+        "framework-files": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/framework_files.py": {
+              "expected_lines": [
+                16,
+                23,
+                32,
+                37,
+                45
+              ],
+              "reported_lines": [
+                16,
+                23,
+                32,
+                37,
+                45
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/deserialization.yml": {
+      "checks": {
+        "unsafe-deserialization": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/deserialization.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/credentials.yml": {
+      "checks": {
+        "hardcoded-password": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/credentials.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/command_injection.yml": {
+      "checks": {
+        "request-shell-command": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/command_injection.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/code_execution.yml": {
+      "checks": {
+        "insecure-eval": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/code_execution.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/business_logic.yml": {
+      "checks": {
+        "client-controlled-payment-amount": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/business_logic.py": {
+              "expected_lines": [
+                9,
+                14
+              ],
+              "reported_lines": [
+                9,
+                14
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/authorization.yml": {
+      "checks": {
+        "csrf-protection-disabled": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/authorization.py": {
+              "expected_lines": [
+                9,
+                15
+              ],
+              "reported_lines": [
+                9,
+                15
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    },
+    "profiles/deep/rules/authentication.yml": {
+      "checks": {
+        "jwt-signature-disabled": {
+          "passed": true,
+          "matches": {
+            "profiles/deep/benchmarks/development/authentication.py": {
+              "expected_lines": [
+                9,
+                13
+              ],
+              "reported_lines": [
+                9,
+                13
+              ]
+            }
+          },
+          "errors": []
+        }
+      }
+    }
+  },
+  "fixtest_results": {},
+  "config_missing_tests": [],
+  "config_missing_fixtests": [],
+  "config_with_errors": []
+}

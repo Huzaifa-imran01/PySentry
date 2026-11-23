@@ -78,12 +78,13 @@ def test_empty_findings_replace_old_report(tmp_path, monkeypatch):
     monkeypatch.setattr(llm_advisor, "ROOT", tmp_path)
     reports = tmp_path / "reports"
     reports.mkdir()
-    (reports / "findings.json").write_text("[]")
+    (reports / "report.json").write_text('{"scan_status":"completed","findings":[]}')
     output = reports / "ai_reviews.json"
     output.write_text('{"reviewed": 4}')
-    monkeypatch.setattr("sys.argv", ["advisor", "--no-llm"])
+    monkeypatch.setattr("sys.argv", ["advisor", "--no-llm", "--report", str(reports)])
     llm_advisor.main()
-    report = json.loads(output.read_text())
+    assert json.loads(output.read_text()) == {"reviewed": 4}
+    report = json.loads(next(reports.glob("ai_review_*.json")).read_text())
     assert report["reviewed"] == 0
     assert report["results"] == []
 
@@ -122,6 +123,7 @@ def test_duplicate_eval_findings_are_grouped():
         "file": "sample.py",
         "line": 6,
         "source_sha256": "abc123",
+        "statement_sha256": "eval-statement",
     }
 
     semgrep = {
@@ -130,6 +132,7 @@ def test_duplicate_eval_findings_are_grouped():
         "file": "sample.py",
         "line": 6,
         "source_sha256": "abc123",
+        "statement_sha256": "eval-statement",
     }
 
     shell = {
@@ -138,6 +141,7 @@ def test_duplicate_eval_findings_are_grouped():
         "file": "sample.py",
         "line": 10,
         "source_sha256": "abc123",
+        "statement_sha256": "eval-statement",
     }
 
     groups = group_duplicate_findings(
@@ -172,3 +176,9 @@ def test_different_source_versions_not_grouped():
     groups = group_duplicate_findings(findings)
 
     assert len(groups) == 2
+
+
+@pytest.fixture(autouse=True)
+def isolated_prompt_screen(monkeypatch):
+    """Gemini unit tests use a stub. Native screening has independent integration coverage."""
+    monkeypatch.setattr("src.secrets_scan.screen_prompt",lambda prompt: None)

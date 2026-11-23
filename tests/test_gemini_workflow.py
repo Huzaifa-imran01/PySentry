@@ -87,7 +87,7 @@ def test_cli_saves_basic_report_before_review(tmp_path, monkeypatch, ready):
     events = []
     def prepare(*a):
         events.append("validation")
-        return ("secret" if ready else None), ("ready" if ready else "authentication_failed")
+        return ("secret-token-value" if ready else None), ("ready" if ready else "authentication_failed")
     def scan(*a, **kwargs):
         events.append("scan")
         return {"bandit":{"source_sha256":__import__("hashlib").sha256(source.read_bytes()).hexdigest(), "results":[{"test_id":"B307", "line_number":1, "filename":str(source)}]}, "semgrep":{"results":[]}}
@@ -95,18 +95,18 @@ def test_cli_saves_basic_report_before_review(tmp_path, monkeypatch, ready):
     monkeypatch.setattr(scanner,"scan_file",scan)
     from src import llm_advisor
     def review(*a, **k):
-        assert (tmp_path/"reports/report.json").exists()
-        assert k["api_key"] == "secret"
+        assert next((tmp_path/"reports").glob("*/report.json")).exists()
+        assert k["api_key"] == "secret-token-value"
         return [{"status":"failed","error":"service_unavailable", "verification_status":"not_verified"}]
     monkeypatch.setattr(llm_advisor,"review_all_findings", review if ready else lambda *a, **k: pytest.fail("reviewed"))
     scanner.main()
-    report = json.loads((tmp_path/"reports/report.json").read_text())
+    report = json.loads(next((tmp_path/"reports").glob("*/report.json")).read_text())
     assert events == ["validation", "scan"]
     assert report["scan_status"] == "completed"
     assert report["file"]["source_sha256"] is not None
     assert report["findings"][0]["remediation_guidance"]["source"] == "predefined_rule_guidance"
     assert report["ai"]["reason"] == ("review_failures" if ready else "authentication_failed")
-    assert "secret" not in (tmp_path/"reports/report.json").read_text()
+    assert "secret-token-value" not in next((tmp_path/"reports").glob("*/report.json")).read_text()
 
 
 def test_scan_failure_overwrites_stale_report(tmp_path, monkeypatch):
@@ -115,7 +115,7 @@ def test_scan_failure_overwrites_stale_report(tmp_path, monkeypatch):
     monkeypatch.setattr(scanner,"scan_file",MagicMock(side_effect=RuntimeError("scanner unavailable")))
     with pytest.raises(SystemExit):
         scanner.main()
-    report=json.loads((tmp_path/"reports/report.json").read_text())
+    report=json.loads(next((tmp_path/"reports").glob("*/report.json")).read_text())
     assert report["scan_status"] == "failed"
     assert report["ai"]["reason"] == "scan_failed"
 

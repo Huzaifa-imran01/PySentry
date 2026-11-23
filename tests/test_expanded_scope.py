@@ -41,7 +41,7 @@ def test_partial_size_parse_and_limit(tmp_path,monkeypatch):
 
 def test_scanner_failure_retains_other_scanner(tmp_path,monkeypatch):
     p=tmp_path/"a.py";p.write_text("eval(input())")
-    monkeypatch.setattr(scanner,"run_json_scanner",MagicMock(side_effect=[{"results":[{"test_id":"B307","filename":str(p),"line_number":1}]},RuntimeError("failed")]))
+    monkeypatch.setattr(scanner,"run_json_scanner",MagicMock(side_effect=[{"results":[{"test_id":"B307","filename":str(p),"line_number":1,"issue_severity":"MEDIUM","issue_text":"unsafe eval"}]},RuntimeError("failed")]))
     _,findings,coverage=scanner.scan_target(p)
     assert len(findings)==1
     assert coverage["status"]=="partial"
@@ -111,7 +111,7 @@ def test_rule_gate_requires_current_successful_bundle(monkeypatch,tmp_path):
     (tmp_path/"rules/code_execution.yml").write_text("rules: []")
     monkeypatch.setattr(rule_validation,"ROOT",tmp_path)
     assert rule_validation.active_config().name=="code_execution.yml"
-    (tmp_path/"rules/validation.json").write_text(json.dumps({"status":"passed","bundle_sha256":rule_validation.bundle_digest()}))
+    (tmp_path/"rules/validation.json").write_text(json.dumps({"status":"passed","bundle_sha256":rule_validation.bundle_digest(), "profile":"standard", "engine_version":rule_validation.engine_version()}))
     assert rule_validation.active_config().name=="rules"
     (tmp_path/"rules/new.yml").write_text("rules: []")
     assert rule_validation.active_config().name=="code_execution.yml"
