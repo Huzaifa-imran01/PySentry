@@ -1,4 +1,4 @@
-title = "Secure review: embedded detectors plus application credential assignments"
+title = "PySentry: embedded detectors plus application credential assignments"
 [extend]
 useDefault = true
 [[rules]]

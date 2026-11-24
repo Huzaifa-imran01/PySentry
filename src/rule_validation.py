@@ -33,7 +33,7 @@ def bundle_digest(profile=PROFILE):
     digest = hashlib.sha256()
     for path in profile_rules(profile) + fixtures:
         digest.update(path.relative_to(ROOT).as_posix().encode() + b"\0")
-        digest.update(hashlib.sha256(path.read_bytes()).digest())
+        digest.update(hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).digest())
     return digest.hexdigest()
 
 

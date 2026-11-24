@@ -1,0 +1,11 @@
+# Use the same annotated rule bundles in Windows worktrees and source archives.
+rules/*.yml text eol=lf
+benchmarks/development/*.py text eol=lf
+benchmarks/holdout/*.py text eol=lf
+profiles/*/rules/*.yml text eol=lf
+profiles/*/benchmarks/development/*.py text eol=lf
+profiles/*/benchmarks/holdout/*.py text eol=lf
+
+# Derived benchmark outputs can be regenerated from the shipped fixtures.
+benchmarks/results export-ignore
+profiles/*/benchmarks/results export-ignore

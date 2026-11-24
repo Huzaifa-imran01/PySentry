@@ -3,3 +3,14 @@ __pycache__/
 .pytest_cache/
 reports/
 *.pyc
+
+# Local review exports, release bundles and CI outputs
+*.sarif
+*.sarif.json
+dist/
+ci-results/
+ci-tests.xml
+
+# Local credentials
+.env
+.env.*

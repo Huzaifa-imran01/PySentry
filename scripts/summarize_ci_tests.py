@@ -6,7 +6,7 @@ import sys
 path = Path(sys.argv[1])
 if path.exists():
     raw = ET.parse(path)
-    suite = ET.Element("testsuite", name="review-agent")
+    suite = ET.Element("testsuite", name="PySentry")
     for index, case in enumerate(raw.iter("testcase"), start=1):
         name = case.get("name","test").partition("[")[0]
         public = ET.SubElement(suite,"testcase", name=f"{name} ({index})", classname=case.get("classname",""))

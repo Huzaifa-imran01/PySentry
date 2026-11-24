@@ -43,6 +43,11 @@ def save_json(path, data, api_key=None):
     text = json.dumps(safe_fields(data), indent=2)
     if api_key:
         text = text.replace(api_key, "[REDACTED]").replace(json.dumps(api_key)[1:-1], "[REDACTED]")
+    write_atomic(path, text)
+
+
+def write_atomic(path, text):
+    """Replace a completed text artifact using a temporary file on the same filesystem."""
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,

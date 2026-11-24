@@ -77,13 +77,16 @@ class DetailsTable(ttk.Frame):
 class ReviewApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Secure Code Review Agent")
+        self.root.title("PySentry")
         self.root.geometry("1160x850")
         self.root.minsize(900, 720)
         self.events = Queue()
         self.busy = False
+        self.help_window = None
         self.close_when_done = False
         self.report = None
+        self.report_path = None
+        self.sarif_root = tk.StringVar()
         self.target = tk.StringVar()
         self.key = tk.StringVar()
         self.model = tk.StringVar(value=MODEL)
@@ -116,11 +119,14 @@ class ReviewApp:
         shell.pack(fill="both", expand=True)
         heading = ttk.Frame(shell)
         heading.pack(fill="x", pady=(0, 10))
-        ttk.Label(heading, text="Secure Code Review Agent", font=("Segoe UI", 18, "bold")).pack(side="left")
+        ttk.Label(heading, text="PySentry", font=("Segoe UI", 18, "bold")).pack(side="left")
+        ttk.Button(heading, text="Help", command=self.show_help).pack(side="right", padx=(8, 0))
         self.open_button = self.input_widget(ttk.Button(heading, text="Open report…", command=self.open_report))
         self.open_button.pack(side="right")
-        self.export_button = ttk.Button(heading, text="Export report…", command=self.export_report, state="disabled")
+        self.export_button = ttk.Button(heading, text="Export JSON…", command=self.export_report, state="disabled")
         self.export_button.pack(side="right", padx=8)
+        self.sarif_button = ttk.Button(heading, text="Export SARIF…", command=self.export_sarif, state="disabled")
+        self.sarif_button.pack(side="right")
 
         options = ttk.LabelFrame(shell, text="Scan setup", padding=10)
         options.pack(fill="x")
@@ -173,14 +179,16 @@ class ReviewApp:
         controls.pack(fill="x", pady=9)
         self.scan_button = ttk.Button(controls, text="Start scan", command=self.start_scan)
         self.scan_button.pack(side="left")
-        self.input_widget(ttk.Checkbutton(controls, text="Advanced limits", variable=self.advanced_visible, command=self.toggle_advanced)).pack(side="left", padx=14)
+        self.input_widget(ttk.Checkbutton(controls, text="Advanced options", variable=self.advanced_visible, command=self.toggle_advanced)).pack(side="left", padx=14)
         self.progress = ttk.Progressbar(controls, mode="indeterminate", length=160)
         self.progress.pack(side="right")
-        self.advanced = ttk.LabelFrame(shell, text="Existing scanner limits", padding=8)
+        self.advanced = ttk.LabelFrame(shell, text="Scan limits and export options", padding=8)
         for index, (name, label) in enumerate((("max_file_bytes", "Max file bytes"), ("max_files", "Max files"),
                                                ("scanner_timeout", "Scanner timeout (s)"), ("total_timeout", "Source budget (s)"))):
             ttk.Label(self.advanced, text=label).grid(row=0, column=index*2, padx=(6, 4))
             self.input_widget(ttk.Entry(self.advanced, textvariable=self.limit_vars[name], width=10)).grid(row=0, column=index*2+1)
+        ttk.Label(self.advanced, text="SARIF repository root (optional)").grid(row=1, column=0, columnspan=2, sticky="w", pady=(6,0))
+        self.input_widget(ttk.Entry(self.advanced, textvariable=self.sarif_root)).grid(row=1, column=2, columnspan=6, sticky="ew", pady=(6,0))
         self.summary_label = ttk.Label(shell, textvariable=self.summary, font=("Segoe UI", 10, "bold"), wraplength=1050)
         self.summary_label.pack(fill="x", pady=(2, 8))
         self.notebook = ttk.Notebook(shell)
@@ -213,6 +221,36 @@ class ReviewApp:
         self.raw = self.text_tab("Raw report")
         ttk.Separator(shell).pack(fill="x", pady=(8, 5))
         ttk.Label(shell, textvariable=self.status, wraplength=1050).pack(fill="x")
+
+    def show_help(self):
+        from src.scanner import scan_help_parser
+
+        if self.help_window is not None and self.help_window.winfo_exists():
+            self.help_window.deiconify()
+            self.help_window.lift()
+            return
+        window = self.help_window = tk.Toplevel(self.root)
+        window.title("PySentry Help")
+        window.geometry("850x620")
+        window.transient(self.root)
+        ttk.Button(window, text="Close", command=window.destroy).pack(side="bottom", pady=6)
+        guide = ScrolledText(window, wrap="word", padx=12, pady=10)
+        guide.pack(fill="both", expand=True)
+        replace_text(guide, (
+            "Using the desktop scanner\n\n"
+            "Choose Browse file or Browse folder, select the checks you want, then click Start scan. "
+            "Leave the Gemini key blank for a basic report. Use Model to select a Gemini model your key can access.\n\n"
+            "Dependencies lets you discover manifests, select one file, select installed packages, or skip auditing. "
+            "Rule profile, Secret scan, Fail on severity and the Require checkboxes correspond to the options below. "
+            "Advanced options contains the size, file count and time limits and the optional SARIF repository root.\n\n"
+            "Follow progress in Messages. Overview explains execution and policy outcomes. Select a row in a "
+            "results tab to inspect its evidence. Use Open report to revisit a run, Export JSON to save a copy, "
+            "or Export SARIF on a finished version 1 report.\n\n"
+            "Scan options and command-line reference\n\n" + scan_help_parser().format_help()
+        ))
+        guide.yview_moveto(0)
+        guide.focus_set()
+        window.bind("<Escape>", lambda event: window.destroy())
 
     def text_tab(self, title):
         frame = ttk.Frame(self.notebook, padding=6)
@@ -279,7 +317,7 @@ class ReviewApp:
                 combo.configure(state="readonly")
         self.dependency_changed()
         self.scan_button.configure(state="disabled" if busy else "normal")
-        self.export_button.configure(state="disabled" if busy or self.report is None else "normal")
+        self.update_export_controls()
         if busy: self.progress.start(12)
         else: self.progress.stop()
 
@@ -319,6 +357,7 @@ class ReviewApp:
 
     def display_report(self, report, path):
         self.report = report
+        self.report_path = Path(path)
         ai = as_dict(report.get("ai"))
         deps = as_dict(report.get("dependencies"))
         self.summary.set(f"Execution: {report.get('execution', {}).get('overall', 'unrecorded')} | Policy: {report.get('policy', {}).get('result', 'unrecorded')} | Source: {report.get('scan_status', '?')}   |   Logical issues: {len(report['logical_issues']) if 'logical_issues' in report else 'unrecorded'} | Detections: {len(report['findings'])} | Secrets: {report.get('secrets',{}).get('status','unrecorded')}   |   AI: {ai.get('status', '?')}   |   Dependencies: {deps.get('status', '?')}")
@@ -349,7 +388,13 @@ class ReviewApp:
         self.coverage_table.populate(items)
         self.status.set("Report: " + str(path))
         self.notebook.select(self.overview.master.master)
-        self.export_button.configure(state="normal" if not self.busy else "disabled")
+        self.update_export_controls()
+
+    def update_export_controls(self):
+        ready = self.report is not None and not self.busy
+        self.export_button.configure(state="normal" if ready else "disabled")
+        finished = ready and self.report.get("schema_version") == 1 and self.report.get("run_status") == "finished"
+        self.sarif_button.configure(state="normal" if finished else "disabled")
 
     def poll(self):
         try:
@@ -400,6 +445,20 @@ class ReviewApp:
                 self.status.set("Exported report: " + path)
             except OSError as exc:
                 messagebox.showerror("Export failed", str(exc), parent=self.root)
+
+    def export_sarif(self):
+        if self.busy or self.report is None:
+            return
+        path = filedialog.asksaveasfilename(parent=self.root, title="Export validated SARIF",
+                                            defaultextension=".sarif", initialfile="security-review.sarif",
+                                            filetypes=[("SARIF 2.1.0", "*.sarif")])
+        if path:
+            try:
+                from src.export_sarif import write_export
+                output = write_export(self.report, self.report_path, path, source_root=self.sarif_root.get().strip() or None)
+                self.status.set(f"Exported SARIF: {output}")
+            except (ImportError, OSError, RuntimeError, ValueError) as exc:
+                messagebox.showerror("SARIF export failed", str(exc), parent=self.root)
 
     def close(self):
         if self.busy:

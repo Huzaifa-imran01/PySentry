@@ -133,6 +133,16 @@ def test_fallback_and_empty_target(cli,tmp_path,capsys):
     assert run(target=folder)["exit_code"] == 2
 
 
+def test_profile_digest_survives_checkout_line_endings(tmp_path, monkeypatch):
+    monkeypatch.setattr(rule_validation, "ROOT", tmp_path)
+    fixture = tmp_path / "benchmarks/development/sample.py"
+    fixture.parent.mkdir(parents=True)
+    fixture.write_bytes(b"def f():\n    pass\n")
+    digest = rule_validation.bundle_digest()
+    fixture.write_bytes(fixture.read_bytes().replace(b"\n", b"\r\n"))
+    assert rule_validation.bundle_digest() == digest
+
+
 @pytest.mark.parametrize("mutate", ["rule", "fixture", "engine", "missing"])
 def test_approval_identity(tmp_path,monkeypatch,mutate):
     monkeypatch.setattr(rule_validation, "ROOT", tmp_path)

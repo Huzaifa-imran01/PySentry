@@ -2,8 +2,8 @@
   "profile": "basic",
   "fixture_sha256": "93108c73d54f273c38610629b919aa5c1d16eee0c7f4ffc43a51b182adc84966",
   "split": "holdout",
-  "bundle_sha256": "5203124e3851547977d5e423943f32cfc66b727383b89075bebb62d280059955",
-  "timestamp": "2026-11-23T05:02:55.277023+00:00",
+  "bundle_sha256": "bcc295052022cd4289bd3da7211859256a2c0258a6e06c19ea8f82319deba5e5",
+  "timestamp": "2026-11-23T19:16:12.170809+00:00",
   "scope": "Semgrep rules only; not Bandit accuracy or general application security",
   "status": "completed",
   "metrics": {

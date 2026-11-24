@@ -195,45 +195,125 @@ def scan_target(target, max_bytes=1_000_000, timeout=120, max_files=1000, total_
 
 
 
-def main():
+def scan_help_parser():
+    from src.gemini_provider import MODEL
+
     parser = argparse.ArgumentParser(
-        description="Scan Python code for security issues"
-    )
+        prog="python -m src.scanner",
+        description=(
+            "PySentry scans Python files with Bandit and local Semgrep rules. It groups\n"
+            "related findings and keeps the scanner, rule and location behind each one.\n"
+            "It can also detect credentials, audit dependencies and request Gemini advice."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""Reading a report
+  Each run saves reports/<run_id>/report.json. Check Files & coverage for
+  skipped files, syntax errors, limits and scanner failures. Zero findings
+  on a partial scan leaves some code unevaluated. Source findings show each
+  detection; Logical issues groups related evidence. AI fixes are proposals.
+  Syntax checks and scanner comparisons do not establish correct behavior.
 
-    parser.add_argument(
-        "path",
-        nargs="?",
-        help="Python file to scan"
-    )
+Exit codes
+  0  Required checks completed and policy passed. The default is report-only.
+  1  Required checks completed and findings violated the configured policy.
+  2  A mandatory check was incomplete, configuration was invalid, or a
+     requested export failed. The native report preserves available evidence.
 
-    parser.add_argument(
-        "--path",
-        dest="flag_path",
-        help="Python file to scan (named option)"
-    )
+Examples (from the project directory)
+  Scan one file without Gemini or dependency lookups:
+    python -m src.scanner app.py --no-llm --skip-dependencies
+  Scan a project with Deep rules and require a completed dependency audit:
+    python -m src.scanner . --profile deep --require-dependencies --fail-on high --no-llm
+  Export repository-relative locations while scanning a subdirectory:
+    python -m src.scanner src --sarif review.sarif --sarif-root . --no-llm
 
-    from src.gemini_provider import MODEL, prepare_ai
-    from src.reporting import ai_report, basic_report, save_json, scanner_metadata, scanner_evidence
-    parser.add_argument("--no-llm", action="store_true", help="Skip all Gemini requests and prompting")
-    parser.add_argument("--api-key-env", help="Consume a Gemini key from this environment variable (CI)")
-    parser.add_argument("--model", default=MODEL, help="Gemini model for validation and review")
-    parser.add_argument("--max-file-bytes", type=int, default=1_000_000)
-    parser.add_argument("--scanner-timeout", type=float, default=120)
-    parser.add_argument("--max-files", type=int, default=1000)
-    parser.add_argument("--total-timeout", type=float, default=600)
-    parser.add_argument("--requirements", help="Select a pinned requirements export or supported Python lockfile")
-    parser.add_argument("--dependency-path", help="Explicit target site-packages directory inside scan root")
-    parser.add_argument("--skip-dependencies", action="store_true")
-    parser.add_argument("--fail-on", choices=("none", "low", "medium", "high"), default="none",
-                        help="Block at this source severity, on unknown severity, any advisory, or any secret finding.")
-    parser.add_argument("--require-dependencies", action="store_true", help="Require a completed dependency audit")
-    parser.add_argument("--require-validated-rules", action="store_true", help="Require current annotated rule approval")
+Related commands
+  python -m src.gui                            Open the desktop interface
+  python -m src.benchmark --validate           Test Standard rules and measure holdout coverage
+  python -m src.llm_advisor --help             Review findings from a saved report
+  python -m src.export_sarif --help            Export a saved report without rescanning""",
+    )
+    target = parser.add_argument_group("Scan target and rule profile")
+    target.add_argument("path", nargs="?", help="Python (.py) file or project directory. Supply exactly one target.")
+    target.add_argument("--path", dest="flag_path", metavar="PATH", help="Named alternative to the positional target.")
+    target.add_argument("--profile", choices=("basic", "standard", "deep"), default="standard",
+                        help="Basic checks eval, deserialization, TLS and weak digests. Standard (default) adds "
+                             "Flask/Django flows and configuration checks. Deep adds selected FastAPI/Starlette "
+                             "flows and more query, file, URL, shell and template checks. A stale or missing "
+                             "approval activates a one-rule fallback.")
+
+    ai = parser.add_argument_group("Optional Gemini review")
+    ai.add_argument("--no-llm", action="store_true",
+                    help="Skip the key prompt and all Gemini requests. Interactively, a blank key also skips AI. "
+                         "A supplied key is checked with a source-free model request that may incur a charge.")
+    ai.add_argument("--api-key-env", metavar="NAME",
+                    help="Read the Gemini key from the named environment variable for this run. "
+                         "Noninteractive scanning defaults to basic review without an explicit credential.")
+    ai.add_argument("--model", default=MODEL,
+                    help="Gemini model for access checks and reviews (default: %(default)s). "
+                         "Up to five finding groups receive explanations and proposed fixes. "
+                         "Selected source context is masked and screened before transmission. "
+                         "Unavailable credentials or an unsuccessful screen leave basic findings available.")
+
+    deps = parser.add_argument_group("Dependency audit")
+    deps.add_argument("--requirements", metavar="FILE",
+                      help="Select one pinned requirements file or supported lockfile. By default PySentry "
+                           "discovers target manifests by subproject. OSV-Scanner reads uv, Poetry, Pipfile "
+                           "and PDM locks. Pip-audit checks pinned requirements and versions from pylock files. "
+                           "Advisory lookups use package names and versions; unresolved constraints give limited coverage.")
+    deps.add_argument("--dependency-path", metavar="DIR",
+                      help="As an alternative to a manifest, audit installed distribution metadata in a "
+                           "target site-packages directory inside the scan root.")
+    deps.add_argument("--skip-dependencies", action="store_true", help="Skip dependency auditing and its advisory lookups.")
+
+    secrets = parser.add_argument_group("Secret detection")
+    secrets.add_argument("--secrets", choices=("directory", "history", "off"), default="directory",
+                         help="Gitleaks scans working files by default. History also checks local Git history "
+                              "when the target is a repository root. Off skips the inventory. Reports redact "
+                              "secret values; optional Gemini review still requires a separate prompt screen.")
+
+    limits = parser.add_argument_group("Scan limits (positive values)")
+    limits.add_argument("--max-file-bytes", type=int, default=1_000_000,
+                        help="Maximum size of a Python source file in bytes (default: %(default)s).")
+    limits.add_argument("--max-files", type=int, default=1000,
+                        help="Maximum number of Python files selected for analysis (default: %(default)s).")
+    limits.add_argument("--scanner-timeout", type=float, default=120,
+                        help="Time limit in seconds for scanner invocations; also used for secret and "
+                             "dependency checks (default: %(default)s).")
+    limits.add_argument("--total-timeout", type=float, default=600,
+                        help="Source file enumeration and scanning budget in seconds (default: %(default)s). "
+                             "Files skipped because of limits appear in coverage.")
+
+    policy = parser.add_argument_group("Execution requirements and security policy")
+    policy.add_argument("--fail-on", choices=("none", "low", "medium", "high"), default="none",
+                        help="None (default) reports findings. An enabled threshold blocks on source issues "
+                             "at or above that severity, unknown severity, any dependency advisory or any secret finding.")
+    policy.add_argument("--require-dependencies", action="store_true",
+                        help="Require the dependency audit to complete. Incompatible with --skip-dependencies.")
+    policy.add_argument("--require-secrets", action="store_true",
+                        help="Require the selected secret scan to complete. Incompatible with --secrets off.")
+    policy.add_argument("--require-validated-rules", action="store_true",
+                        help="Require current Semgrep rule approval. Fallback coverage makes the run incomplete.")
+
+    output = parser.add_argument_group("Report export")
+    output.add_argument("--sarif", metavar="FILE", type=Path,
+                        help="Also export a finished native report as validated SARIF 2.1.0. "
+                             "Choose a .sarif or .sarif.json file.")
+    output.add_argument("--sarif-root", metavar="DIR",
+                        help="With --sarif, choose the checkout root for relative source locations. "
+                             "Defaults to the scan root.")
     parser.add_argument("--run-id", type=uuid.UUID, help=argparse.SUPPRESS)
-    parser.add_argument("--profile", choices=("basic","standard","deep"), default="standard", help="Select a separately approved Semgrep rule set")
-    parser.add_argument("--secrets", choices=("directory","history","off"), default="directory",
-                        help="Scan working files, additionally scan Git history, or disable secret detection")
-    parser.add_argument("--require-secrets", action="store_true")
+    return parser
+
+
+def main():
+    from src.gemini_provider import prepare_ai
+    from src.reporting import ai_report, basic_report, save_json, scanner_metadata, scanner_evidence
+
+    parser = scan_help_parser()
     args = parser.parse_args()
+    if args.sarif_root and args.sarif is None:
+        parser.error("--sarif-root requires --sarif")
     if args.require_secrets and args.secrets == "off":
         parser.error("--require-secrets conflicts with --secrets off")
     if args.require_dependencies and args.skip_dependencies:
@@ -344,6 +424,23 @@ def main():
     report.update(run_status="finished", finished_at=datetime.now(timezone.utc).isoformat())
     save_json(report_dir / "ai_reviews.json", ai, key)
     save_json(report_path, report, key)
+    if args.sarif is not None:
+        from src.export_sarif import write_export
+        from src.reporting import load_report
+
+        # Export the persisted, redacted evidence. Preserve it if the optional output fails.
+        try:
+            output = write_export(load_report(report_path), report_path, args.sarif, source_root=args.sarif_root)
+            report["exports"] = {"sarif": {"status": "completed", "path": str(output)}}
+            print(f"Exported SARIF: {output}")
+        except (ImportError, OSError, RuntimeError, ValueError) as exc:
+            report["exports"] = {"sarif": {"status": "failed", "error": type(exc).__name__}}
+            report["execution"]["reasons"].append("sarif_export_failed")
+            if report["execution"]["overall"] == "completed":
+                report["execution"]["overall"] = "incomplete"
+            code = report["exit_code"] = 2
+            print(f"SARIF export failed: {exc}", file=sys.stderr)
+        save_json(report_path, report, key)
     secret_result = report["secrets"]
     dependency_result = report["dependencies"]
     print(f"Secret scan {secret_result['status']} ({args.secrets})")

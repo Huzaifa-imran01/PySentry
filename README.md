@@ -1,118 +1,91 @@
-# Secure Code Review Agent
+# PySentry
 
-Python-only source scanning with Bandit, reviewed local Semgrep configurations, optional Gemini advice, explicit dependency auditing, and trusted-fixture repair checks.
+Scan a Python file or project directory with Bandit and local Semgrep rules. The CLI and desktop GUI share the same scanner. Each run produces a versioned JSON report containing findings, their supporting evidence, coverage and policy results. Export a finished run as SARIF 2.1.0 to use it in code-review tools.
 
-## Current validation boundary
+## Install and run
 
-The standard Semgrep profile is approved by annotated tests for its exact rule bundle, development fixtures, and Semgrep package version. A missing, legacy, stale, or unsuccessful approval selects the one-rule fallback and emits a warning. Revalidate after changing the engine, rules, or fixtures. Every report records the effective configuration, IDs, digest, engine versions, and reason.
-
-From an ordinary terminal with the project venv, run:
+Use Python 3.12. Start in the extracted source directory or the repository root. The native-tool installer supports x64 Windows and Linux, downloads the pinned Gitleaks and OSV-Scanner releases, verifies their SHA-256 checksums and installs them beside the selected interpreter. Use a Python installation with Tk for the GUI. Git is needed for history scans and release tooling.
 
 ```powershell
-.\.venv\Scripts\python.exe -m src.benchmark --validate
+py -3.12 -m venv .venv
+$python = (Resolve-Path .venv/Scripts/python.exe).Path
+& $python -m pip install -r requirements-agent.txt
+& $python scripts/install_scanners.py
+& $python -m pip check
+& $python -m src.scanner tests/fixtures/insecure_sample.py --no-llm --skip-dependencies
+& $python -m src.gui
 ```
 
-This invokes Semgrep's `--test --strict --json` mechanism, requires a passing result for every rule and zero configuration errors, records the bundle fingerprint, then evaluates held-out cases. Only the development test pass activates the expanded bundle. Any later rule or development-fixture edit invalidates approval. Inspect `rules/validation.json` and `benchmarks/results/rule_tests.json`. If tests fail, fix the documented mismatches before claiming coverage. Do not manually mark validation passed.
+On Linux, create the environment with `python3.12 -m venv .venv` and use `.venv/bin/python`. On Windows, `start_gui.bat` also starts the GUI after installation. Select a file or directory, choose a profile, and click **Start scan**. The Overview shows status and coverage. The Logical issues tab opens individual scanner records. Separate tabs show secret locations, dependency advisories, AI reviews and messages. [Desktop guide](GUI_README.md)
 
-## Installation and scanning
+## Scope and profiles
 
-Use Python 3.12. Pinned agent tool versions are in `requirements-agent.txt`, deliberately distinct from a target application's dependency manifest.
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-agent.txt
-.\.venv\Scripts\python.exe scripts/install_scanners.py
-.\.venv\Scripts\python.exe -m src.scanner --path C:\path\to\project --no-llm
-.\.venv\Scripts\python.exe -m src.scanner --path C:\path\to\file.py
-```
-
-Both files and directories are supported. An interactive run prompts for a hidden optional Gemini key; Enter skips AI. `--no-llm` makes no Gemini requests. Noninteractive runs skip AI unless `--api-key-env NAME` explicitly supplies a CI secret. Keys remain in memory. A source-free preflight precedes scanning; AI sends only selected source context plus finding metadata. `--model` selects the Gemini model.
-
-Limits: `--max-file-bytes 1000000`, `--scanner-timeout 120`, `--max-files 1000`, `--total-timeout 600` (source enumeration/scanning budget). Directory exclusions include virtual environments, Git metadata, caches, reports, build/dist, and node_modules. Symlinks and paths outside the selected root are not followed. Excluded directories are listed as directory-level exclusions; skipped Python files, syntax failures, provenance failures, and scanner failures have individual records. A partial scan exits nonzero. Findings from a successful scanner are retained even if the other fails.
-
-`reports/<run_id>/report.json` includes `coverage`, per-file fingerprints, actual finding paths, scanner versions and active rule IDs, `rule_validation`, separate `dependencies`, and optional `ai`. Findings are never removed merely because AI failed. Zero findings on a partial/failed scan is not a clean bill of health.
-
-## Dependency auditing
-
-Directory scans discover manifests by subproject under the selected root. Discovery skips symlinks, junctions, virtual environments, caches and generated directories. The limits are 10,000 directory entries and 8 MB per manifest. A limit or unreadable input appears in coverage. Within each directory the precedence is `pylock.toml`, `uv.lock`, `poetry.lock`, `Pipfile.lock`, then `pdm.lock`. Without a lock the auditor uses the discovered `requirements*.txt` files. A standalone `pyproject.toml` is reported as unresolved declarations. The agent's own requirements file is excluded from discovery. Each selected input records its fingerprint, subproject, tool, resolution type and outcome. Overlapping inputs are listed separately.
-
-OSV-Scanner 2.2.2 reads uv, Poetry, Pipfile and PDM locks with resolution disabled. Standardized `pylock.toml` and `pylock.*.toml` files use a validated metadata-only export of their exact package versions to pip-audit. Named pylocks in one subproject are audited together. The adapter checks its version, exit status, response path and package inventory. Pinned requirements and explicitly selected installed metadata use pip-audit. Advisory lookups send package identifiers and versions to the advisory service. Package names are canonicalized, versions are kept separate and advisory records are merged only on shared IDs or aliases. Each logical advisory retains its scanner and manifest occurrences. Use `--requirements PATH` to select a specific lock or pinned export.
-
-```powershell
-.\.venv\Scripts\python.exe -m src.scanner --path C:\app --requirements C:\app\requirements-audit.txt --no-llm
-.\.venv\Scripts\python.exe -m src.scanner --path C:\app --dependency-path C:\app\.venv\Lib\site-packages --no-llm
-```
-
-An explicitly selected installed-distribution directory must be inside the target root. No default audit of the agent environment occurs. `--skip-dependencies` disables this network-backed check. Pinned manifests use pip-audit `--disable-pip --no-deps`, avoiding untrusted build/resolver execution. Unpinned/VCS/editable/includes/hash-format manifests are reported unsupported; export a complete pinned list first. Transitive coverage is only as complete as the input export. Results include package/version, advisory ID, aliases and fix versions. Audit failures and skipped packages remain visible, independently of source-scan status. A live lookup of the intentionally old requests 2.19.1 benchmark returned 10 advisories; it was not installed.
-
-## Coverage and honest limits
-
-Candidate rule categories: code execution; request-to-shell, SQL, file, URL, unsafe HTML and template sinks; pickle/unsafe YAML; MD5/SHA1; disabled TLS verification; literal password assignments; disabled JWT signatures; Django CSRF exemptions; client-controlled Stripe amounts; Django-style DEBUG=True settings.
-
-Framework sources cover selected Flask request args/form/values/JSON/uploads and Django GET/POST/body idioms. Assignment propagation is supplied by Semgrep's taint engine. HTML escaping sanitizes HTML-marking sinks only, not template code or other categories. SQL sinks focus on query text, URL sinks on URLs. There is no generic validator sanitizer.
-
-These checks do NOT prove authentication correctness, ownership authorization, tenant isolation, pricing/business invariants, production deployment safety, exploitability, or absence of vulnerabilities. CSRF exemption is a configuration warning, not proof of missing authorization. Hardcoded-password, weak-digest and debug patterns can be legitimate in examples/nonsecurity contexts. Cross-function wrappers and dynamic dispatch are known limits of these local rules. Bandit has additional default checks; benchmark metrics are explicitly Semgrep-only.
-
-Provenance: `rules/PROVENANCE.md` pins the reviewed community reference. Local code-execution policy retains the original broad eval warning; no changing remote rule registry or copied proprietary rules are used.
-
-## Benchmarks and metrics
-
-`benchmarks/development` contains two positive variants, a safe example, and a declared known-limit example per category. `benchmarks/holdout` contains separately authored positive/safe/known-limit cases, not used to tune the rules. Fixtures are parsed/scanned only, never executed. Synthetic examples are not a representative security-accuracy study.
-
-```powershell
-.\.venv\Scripts\python.exe -m src.benchmark --split development
-.\.venv\Scripts\python.exe -m src.benchmark --split holdout
-```
-
-Annotation-based precision/recall are measured separately. Overall recall includes known-limit positives as false negatives if missed; supported-case recall is also labelled separately. False positives include unexpected detections. Scan completeness records analyzed versus eligible files. Failed engine runs produce null metrics, never fabricated success.
-
-Optional `--judgments PATH` accepts explicit human labels using `benchmarks/judgments.example.json`: explanation correctness, usable fix, scanner improvement, behavior pass. Each metric retains its own labelled denominator; unknown values stay null. JSON response success and syntax acceptance are not proxies for AI correctness. No live Gemini quality benchmark was performed.
-
-## Fix checks and verification
-
-AI context includes the enclosing function and relevant module imports, capped at 12000 characters with explicit truncation. Prompt instructions treat source as untrusted data, focus on the reported finding, preserve behavior, permit multiline code, and prohibit claims of verification. Individual batch failures do not reuse prior reviews.
-
-`fix_checks` compiles suggestions and reports unresolved external names without executing code. `syntax_valid_unverified` remains advisory. The verifier still stages exactly one matching undecorated function in trusted fixtures, preserves originals, and compares scanner evidence. Where target line information is supplied, it additionally compares AST statement fingerprints and function scopes to avoid relying solely on whole-file rule totals. Line shifts alone do not change these identities; statement edits and identical duplicate statements remain limitations. Comparisons remain conservative and unverified.
-
-The five trusted literal-parser behavior tests use handwritten reviewed code. They are not tests of arbitrary Gemini fixes. No model-generated code is automatically executed, applied, or certified safe.
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-```
-
-
-## Policy and run reports
-
-The default is report-only. Source coverage is always required. Optional dependency or AI failures are recorded separately. Secret scanning defaults to working files. Use `--require-secrets` to make incomplete secret detection an execution failure. Every secret finding blocks an enabled security threshold.
-
-- `--fail-on none|low|medium|high` sets the source blocking threshold. INFO/LOW, WARNING/MEDIUM and ERROR/HIGH share levels; CRITICAL is above HIGH. An unrecognized severity blocks at any enabled threshold. Any reported dependency advisory also blocks at any enabled threshold, including advisories without a severity.
-- `--require-dependencies` requires a completed audit independently of the finding threshold. Combine it with `--fail-on` to require both completion and acceptable findings.
-- `--require-validated-rules` requires current native rule approval. A fallback scan still collects evidence and produces a diagnostic report.
-- Exit 0 means required checks completed and the configured policy passed. Exit 1 means a finding violated policy. Exit 2 means invalid configuration or incomplete required execution. If findings violate policy during an incomplete run, violations are retained and the policy result is `not_evaluable`.
-
-Each invocation writes its own schema version 1 JSON artifacts in `reports/<run_id>/`. Source evidence is checkpointed before later stages. Each update replaces the individual file atomically. A finished report records execution, policy, exit code, and completion time. The final JSON event on stdout identifies its run and absolute report path. The GUI can also open older unversioned reports; execution and policy fields absent from those reports are displayed as unrecorded.
-
-To review saved findings, use `python -m src.llm_advisor --report <report-path-or-run-directory>`. Each standalone review writes a separate AI review file beside the selected report.
-
-## Reviewed profiles and source evidence
-
-| Profile | Approved rule families |
+| Semgrep profile | Reviewed scope |
 | --- | --- |
-| Basic | Four checks for eval, deserialization, TLS verification and weak digests |
-| Standard (default) | The original 15 rules, including selected Flask and Django flows |
-| Deep | Standard plus eight rules for framework SQL, outbound URLs, file operations, shells, templates, YAML, insecure session transport and password hashing |
+| Basic | 4 rules for eval, unsafe deserialization, disabled TLS verification and weak digests |
+| Standard (default) | 15 rules including selected Flask and Django request flows, credential patterns, insecure configuration, templates, SQL and client-controlled payments |
+| Deep | 23 rules including Standard and additional FastAPI, Starlette, file, URL, query, shell, template, YAML, session and password-handling checks |
 
-Select a profile with `--profile basic|standard|deep` or the GUI's Rule profile control. Each profile owns a frozen rule list and independent fixtures, approval digest and Semgrep version. The effective rule IDs are enumerated in each report. Run `python -m src.benchmark --validate --profile deep` to retest and measure Deep. Basic and Deep snapshots live under `profiles/`; synchronize shared rules deliberately when updating them. The extra rules were authored locally. The original upstream reference remains documented in `rules/PROVENANCE.md`.
+Choose `--profile basic|standard|deep`. Bandit uses its own rules. A Semgrep approval binds the chosen rules and development fixtures to their digest and engine version. An absent or stale approval activates a one-rule fallback and a warning. The report records the effective rule IDs. CI can require current approval. [Rule provenance](rules/PROVENANCE.md)
 
-Deep follows supported FastAPI route arguments, selected Form/Body/Query/Path parameters, Pydantic fields, explicitly typed request methods and upload reads. Its sinks include SQLAlchemy query text, Django raw queries, httpx and urllib URLs, typed aiohttp session requests, pathlib I/O and selected extraction calls. Path construction alone is allowed. Bound SQL values and HTTP query parameters are outside these sinks.
+Directory scans record per-file fingerprints, scanner outcomes and omissions. Source limits default to 1,000 files, 1,000,000 bytes per file, 120 seconds per scanner invocation and a 600-second source budget. Use `python -m src.scanner --help` for overrides. Review coverage whenever a scan produces zero findings. Local patterns can miss cross-function flows, authorization requirements, tenant isolation and business invariants.
 
-`findings` retains each source detection with its native severity, confidence, message and location. `logical_issues` groups compatible evidence at the same unambiguous AST statement and source version. Distinct calls at an ambiguous location remain separate. Unmapped rules retain scanner-specific categories. INFO/LOW, WARNING/MEDIUM and ERROR/HIGH normalize to LOW, MEDIUM and HIGH. CRITICAL is retained. Unrecognized levels remain UNKNOWN. Select a logical issue in the GUI to see its supporting records.
+## Interpreting a run
 
-## Secrets and cloud review
+The authoritative artifact is `reports/<run_id>/report.json`. Source evidence is saved before later checks. Reports are updated atomically. The final CLI event identifies the run and report path. `findings` retains individual detections. `logical_issues` groups compatible evidence and records a normalized severity. Each supporting record retains the scanner's severity, confidence, rule, message and location.
 
-The installer checks SHA-256 release digests before placing Gitleaks 8.24.3 and OSV-Scanner 2.2.2 beside the agent interpreter on x64 Windows or Linux. `--secrets directory` scans working files by default. `history` additionally scans all local Git refs when the target is a repository root. `off` skips the inventory. Missing tools, timeouts and failed scopes are visible in the report. The adapter pins the configuration, uses an empty trusted ignore file, and ignores target `gitleaks:allow` comments. Embedded detector allowlists, project exclusions and binary-file handling limit coverage. Reported matches need human review.
+**Execution** records whether mandatory checks completed. Source scanning is mandatory. Add `--require-dependencies`, `--require-secrets` or `--require-validated-rules` for additional requirements. **Policy** evaluates completed evidence against `--fail-on none|low|medium|high`. The default is report-only. Any advisory, secret finding or unrecognized source severity blocks an enabled threshold.
 
-The detector writes redacted JSON to a pipe. Saved findings retain a detector, scope, path, line, redacted description and location fingerprint. Scanner source excerpts are omitted from sidecars. Before each Gemini review, literals and comments are masked and the exact proposed prompt is screened with pinned Gitleaks. An unavailable screen or unsafe context skips that review even when the optional repository-wide secret scan is disabled. Masking can reduce the specificity of a proposed fix.
+| CLI exit | Meaning |
+| --- | --- |
+| 0 | Required checks completed and the configured policy passed |
+| 1 | Required checks completed and findings violated policy |
+| 2 | Invalid configuration, failed mandatory execution or requested export failure |
 
-## Continuous integration
+Incomplete mandatory checks produce `not_evaluable` and preserve known violations. A SARIF export error preserves the native scan and its recorded policy outcome.
 
-Pull requests and pushes run Python 3.12 checks on Windows and Linux. The workflow separates deterministic tests, per-profile annotated Semgrep tests and holdouts, native Gitleaks history tests, and CLI policy tests for exits 0, 1 and 2. Scheduled or manually dispatched runs also query live advisories. No Gemini credential is configured. The workflow uses read-only contents permission, commit-pinned actions and short-lived artifacts from controlled test inputs.
+## Dependencies, secrets and AI
+
+Dependency discovery is bounded to the target root and groups inputs by subproject. Standardized Python locks take precedence, followed by uv, Poetry, Pipfile and PDM locks, then pinned requirements. The report identifies shadowed manifests and unresolved declarations. OSV-Scanner handles uv, Poetry, Pipfile and PDM. Pip-audit handles pinned requirements, exact versions from standardized Python locks and explicitly selected installed metadata. Package names, versions, advisory IDs, aliases, fixes and manifest occurrences remain inspectable. Transitive coverage depends on the input inventory. A live advisory service can change its findings over time.
+
+Use `--requirements PATH` for one manifest, `--dependency-path PATH` for a target's installed metadata inside the scan root, or `--skip-dependencies` to disable auditing. The agent's own requirements file is excluded from automatic discovery.
+
+Gitleaks scans working files by default. `--secrets history` adds local Git history for a repository root. `--secrets off` skips the inventory. A controlled detector configuration ignores target suppression comments and uses a trusted ignore file. Detector allowlists, excluded directories, binary handling and available local Git history limit coverage.
+
+An interactive scan accepts an optional hidden Gemini key. A source-free request checks model access and can incur a charge. An unavailable credential leaves basic scanning available. CI can supply a credential explicitly with `--api-key-env NAME`. `--no-llm` disables Gemini requests and prompting. Each proposed review masks literals and comments and screens the outgoing context with Gitleaks. Failed screening skips that review. The source context is bounded to 12,000 characters and reviews are limited to five groups. Suggested fixes are proposals. Syntax checks, scanner comparisons and trusted fixture behavior tests provide different kinds of evidence. [Gemini usage](src/GEMINI_USAGE.md)
+
+## Export SARIF
+
+To scan a repository subdirectory and produce paths relative to the repository checkout:
+
+```powershell
+& $python -m src.scanner C:\work\app\src --sarif-root C:\work\app --sarif review.sarif --no-llm
+```
+
+To export again from an existing report, pass a report file or run directory. Replace the sample paths with the recorded run and repository root:
+
+```powershell
+& $python -m src.export_sarif reports/RUN_ID review.sarif --source-root C:\work\app
+```
+
+The default path base is the scan root. For a subdirectory scan, select its containing checkout as the base for GitHub. In the GUI use **Export SARIF…** on a finished version 1 report. The repository root is under **Advanced options**. Older reports remain viewable and exportable as native JSON.
+
+The exporter validates against the bundled OASIS schema. It maps logical issues to rule descriptors and results, retains provenance and scanner versions, and includes coverage and execution metadata. High and critical map to `error`, medium to `warning`, and low to `note`. Unknown severity is retained and displayed as a warning. Source fingerprints use relative paths and available statement and scope identities. GitHub's upload action may warn that its text-based hash differs and retain the supplied fingerprint. Moving a statement down the file preserves its fingerprint. Renaming it, changing its contents or adding indistinguishable occurrences can affect matching. Dependency advisories with a known manifest use file-level locations. Findings without a current source location have limited inline display in code-review tools.
+
+### GitHub code scanning
+
+In an eligible repository with code scanning enabled, set the Actions repository variable `ENABLE_SARIF_UPLOAD` to `true`. The optional job runs on pushes to the default branch or a manual dispatch on that branch. It validates Standard, scans the agent's `src` directory with repository-relative locations, uploads a completed source analysis under a stable category and waits for GitHub processing. Only this job requests `security-events: write`; pull requests run the ordinary read-only checks. Confirm the category, paths and alert locations in the repository's code scanning results. Public GitHub.com repositories and eligible organization-owned repositories with GitHub Code Security enabled can use the integration. [GitHub upload requirements](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file)
+
+## Verify and release
+
+```powershell
+& $python -m pytest -q
+foreach ($profile in 'basic','standard','deep') {
+    & $python -m src.benchmark --profile $profile --validate
+    if ($LASTEXITCODE -ne 0) { throw "Validation failed for $profile" }
+}
+```
+
+The benchmark runs genuine annotated Semgrep tests, writes the profile's approval and measures a separate holdout. Inspect precision, recall, known misses and file coverage in the generated results. These measurements apply to the labelled Semgrep fixtures. AI quality metrics require explicit judgments. For native integration tests, set `REVIEW_NATIVE_TESTS=1`. The separate live lockfile tests also require `REVIEW_LIVE_ADVISORIES=1` and network access.
+
+Build a source ZIP from a selected commit using `python scripts/build_release.py HEAD dist/source.zip`. The builder checks the archived file list and contents against the committed tree. Uncommitted edits are excluded. Direct Python requirements and native tools are pinned; resolved transitive Python packages can vary over time. Run the clean-install and compatibility checks before publishing. [Release checklist](RELEASE_CHECKLIST.md)

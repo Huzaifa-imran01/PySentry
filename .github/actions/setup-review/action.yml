@@ -1,4 +1,4 @@
-name: Set up review agent
+name: Set up PySentry
 description: Install the supported interpreter, agent requirements and verified external tools
 runs:
   using: composite

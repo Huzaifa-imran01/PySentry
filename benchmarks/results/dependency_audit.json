@@ -131,5 +131,5 @@
     }
   ],
   "scope": "explicit declared versions only; transitive coverage requires a complete lock export",
-  "input": "C:\\Users\\Test\\Documents\\Projects\\secure-code-review-agent\\benchmarks\\dependencies\\vulnerable.txt"
+  "input": "C:\\Users\\Test\\Documents\\Projects\\PySentry\\benchmarks\\dependencies\\vulnerable.txt"
 }
