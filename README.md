@@ -16,7 +16,7 @@ $python = (Resolve-Path .venv/Scripts/python.exe).Path
 & $python -m src.gui
 ```
 
-On Linux, create the environment with `python3.12 -m venv .venv` and use `.venv/bin/python`. On Windows, `start_gui.bat` also starts the GUI after installation. Select a file or directory, choose a profile, and click **Start scan**. The Overview shows status and coverage. The Logical issues tab opens individual scanner records. Separate tabs show secret locations, dependency advisories, AI reviews and messages. [Desktop guide](GUI_README.md)
+On Linux, create the environment with `python3.12 -m venv .venv` and use `.venv/bin/python`. On Windows, `start_gui.bat` also starts the GUI after installation. Select a file or directory, choose a profile, and click **Start scan**. The Overview shows status and coverage. The Logical issues tab opens individual scanner records. Separate tabs show exposed credential locations, dependency advisories, AI reviews and messages. [Desktop guide](GUI_README.md)
 
 ## Scope and profiles
 
@@ -34,7 +34,7 @@ Directory scans record per-file fingerprints, scanner outcomes and omissions. So
 
 The authoritative artifact is `reports/<run_id>/report.json`. Source evidence is saved before later checks. Reports are updated atomically. The final CLI event identifies the run and report path. `findings` retains individual detections. `logical_issues` groups compatible evidence and records a normalized severity. Each supporting record retains the scanner's severity, confidence, rule, message and location.
 
-**Execution** records whether mandatory checks completed. Source scanning is mandatory. Add `--require-dependencies`, `--require-secrets` or `--require-validated-rules` for additional requirements. **Policy** evaluates completed evidence against `--fail-on none|low|medium|high`. The default is report-only. Any advisory, secret finding or unrecognized source severity blocks an enabled threshold.
+**Execution** records whether mandatory checks completed. Source scanning is mandatory. Add `--require-dependencies`, `--require-credential-scan` or `--require-validated-rules` for additional requirements. **Policy** evaluates completed evidence against `--fail-on none|low|medium|high`. The default is report-only. Any advisory, credential finding or unrecognized source severity blocks an enabled threshold.
 
 | CLI exit | Meaning |
 | --- | --- |
@@ -44,13 +44,13 @@ The authoritative artifact is `reports/<run_id>/report.json`. Source evidence is
 
 Incomplete mandatory checks produce `not_evaluable` and preserve known violations. A SARIF export error preserves the native scan and its recorded policy outcome.
 
-## Dependencies, secrets and AI
+## Dependencies, credentials and AI
 
 Dependency discovery is bounded to the target root and groups inputs by subproject. Standardized Python locks take precedence, followed by uv, Poetry, Pipfile and PDM locks, then pinned requirements. The report identifies shadowed manifests and unresolved declarations. OSV-Scanner handles uv, Poetry, Pipfile and PDM. Pip-audit handles pinned requirements, exact versions from standardized Python locks and explicitly selected installed metadata. Package names, versions, advisory IDs, aliases, fixes and manifest occurrences remain inspectable. Transitive coverage depends on the input inventory. A live advisory service can change its findings over time.
 
 Use `--requirements PATH` for one manifest, `--dependency-path PATH` for a target's installed metadata inside the scan root, or `--skip-dependencies` to disable auditing. The agent's own requirements file is excluded from automatic discovery.
 
-Gitleaks scans working files by default. `--secrets history` adds local Git history for a repository root. `--secrets off` skips the inventory. A controlled detector configuration ignores target suppression comments and uses a trusted ignore file. Detector allowlists, excluded directories, binary handling and available local Git history limit coverage.
+Gitleaks scans working files by default. `--credential-scan history` adds local Git history for a repository root. `--credential-scan off` skips the inventory. A controlled detector configuration ignores target suppression comments and uses a trusted ignore file. Detector allowlists, excluded directories, binary handling and available local Git history limit coverage.
 
 An interactive scan accepts an optional hidden Gemini key. A source-free request checks model access and can incur a charge. An unavailable credential leaves basic scanning available. CI can supply a credential explicitly with `--api-key-env NAME`. `--no-llm` disables Gemini requests and prompting. Each proposed review masks literals and comments and screens the outgoing context with Gitleaks. Failed screening skips that review. PySentry attempts a review for every unique finding group, with up to 12,000 characters of source context per group. Suggested fixes are proposals. Syntax checks, scanner comparisons and trusted fixture behavior tests provide different kinds of evidence. [Gemini usage](src/GEMINI_USAGE.md)
 
