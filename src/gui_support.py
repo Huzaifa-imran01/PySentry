@@ -77,9 +77,9 @@ def scanner_command(options, use_ai, python=None):
             command += ["--requirements", str(Path(options.requirements).resolve())]
         if options.dependency_path:
             command += ["--dependency-path", str(Path(options.dependency_path).resolve())]
-    command += ["--fail-on", options.fail_on, "--profile",options.profile, "--secrets",options.secrets]
+    command += ["--fail-on", options.fail_on, "--profile",options.profile, "--credential-scan",options.secrets]
     if options.require_secrets:
-        command.append("--require-secrets")
+        command.append("--require-credential-scan")
     if options.require_dependencies:
         command.append("--require-dependencies")
     if options.require_validated_rules:
@@ -88,7 +88,7 @@ def scanner_command(options, use_ai, python=None):
 
 
 def run_scan(options, api_key, events, project_root=PROJECT_ROOT):
-    """Worker: never touches Tk widgets, changes scanner code, or puts secrets in argv."""
+    """Worker: never touches Tk widgets, changes scanner code, or puts credentials in argv."""
     key = api_key.strip()
     run_id = uuid.uuid4().hex
     report_path = project_root / "reports" / run_id / "report.json"
@@ -171,7 +171,12 @@ def overview_text(report):
               "Security policy: " + policy.get("result", "unrecorded (legacy report)"),
               "Severity threshold: " + policy.get("fail_on", "unrecorded"),
               "Credential scan: " + execution.get("secrets", "unrecorded")]
-    lines.extend(policy.get("reasons", []))
+    for reason in policy.get("reasons", []):
+        if reason.startswith("secret_detections:"):
+            reason = "Credential findings:" + reason.removeprefix("secret_detections:")
+        elif reason.startswith("secrets_"):
+            reason = "Credential scan: " + reason.removeprefix("secrets_")
+        lines.append(reason)
     for scope,status in report.get("secrets",{}).get("scopes",{}).items():
         lines.append(f"Credential scan ({scope}): {status}")
     for item in deps.get("inputs",[]):

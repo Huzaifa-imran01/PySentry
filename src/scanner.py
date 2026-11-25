@@ -266,11 +266,14 @@ Related commands
                            "target site-packages directory inside the scan root.")
     deps.add_argument("--skip-dependencies", action="store_true", help="Skip dependency auditing and its advisory lookups.")
 
-    secrets = parser.add_argument_group("Secret detection")
-    secrets.add_argument("--secrets", choices=("directory", "history", "off"), default="directory",
-                         help="Gitleaks scans working files by default. History also checks local Git history "
-                              "when the target is a repository root. Off skips the inventory. Reports redact "
-                              "secret values; optional Gemini review still requires a separate prompt screen.")
+    credentials = parser.add_argument_group("Credential scan")
+    scopes = ("directory", "history", "off")
+    credentials.add_argument("--credential-scan", choices=scopes, default="directory",
+                             help="Gitleaks scans working files by default. History also checks local Git history "
+                                  "when the target is a repository root. Off skips the credential scan. Reports redact "
+                                  "credential values. Optional Gemini review still requires a separate prompt screen.")
+    credentials.add_argument("--secrets", dest="credential_scan", choices=scopes,
+                             default=argparse.SUPPRESS, help=argparse.SUPPRESS)
 
     limits = parser.add_argument_group("Scan limits (positive values)")
     limits.add_argument("--max-file-bytes", type=int, default=1_000_000,
@@ -278,7 +281,7 @@ Related commands
     limits.add_argument("--max-files", type=int, default=1000,
                         help="Maximum number of Python files selected for analysis (default: %(default)s).")
     limits.add_argument("--scanner-timeout", type=float, default=120,
-                        help="Time limit in seconds for scanner invocations; also used for secret and "
+                        help="Time limit in seconds for scanner invocations; also used for credential and "
                              "dependency checks (default: %(default)s).")
     limits.add_argument("--total-timeout", type=float, default=600,
                         help="Source file enumeration and scanning budget in seconds (default: %(default)s). "
@@ -287,11 +290,13 @@ Related commands
     policy = parser.add_argument_group("Execution requirements and security policy")
     policy.add_argument("--fail-on", choices=("none", "low", "medium", "high"), default="none",
                         help="None (default) reports findings. An enabled threshold blocks on source issues "
-                             "at or above that severity, unknown severity, any dependency advisory or any secret finding.")
+                             "at or above that severity, unknown severity, any dependency advisory or any credential finding.")
     policy.add_argument("--require-dependencies", action="store_true",
                         help="Require the dependency audit to complete. Incompatible with --skip-dependencies.")
-    policy.add_argument("--require-secrets", action="store_true",
-                        help="Require the selected secret scan to complete. Incompatible with --secrets off.")
+    policy.add_argument("--require-credential-scan", action="store_true",
+                        help="Require the credential scan to complete. Incompatible with --credential-scan off.")
+    policy.add_argument("--require-secrets", dest="require_credential_scan", action="store_true",
+                        default=argparse.SUPPRESS, help=argparse.SUPPRESS)
     policy.add_argument("--require-validated-rules", action="store_true",
                         help="Require current Semgrep rule approval. Fallback coverage makes the run incomplete.")
 
@@ -314,8 +319,8 @@ def main():
     args = parser.parse_args()
     if args.sarif_root and args.sarif is None:
         parser.error("--sarif-root requires --sarif")
-    if args.require_secrets and args.secrets == "off":
-        parser.error("--require-secrets conflicts with --secrets off")
+    if args.require_credential_scan and args.credential_scan == "off":
+        parser.error("--require-credential-scan conflicts with --credential-scan off")
     if args.require_dependencies and args.skip_dependencies:
         parser.error("--require-dependencies conflicts with --skip-dependencies")
     if args.max_file_bytes <= 0 or args.max_files <= 0 or any(
@@ -371,7 +376,7 @@ def main():
     from src.secrets_scan import detect
     report["logical_issues"] = logical_issues(report["findings"])
     report["counts"].update(logical_issues=len(report["logical_issues"]), scanner_detections=len(unified))
-    report["secrets"] = {"status":"pending","findings":[]} if args.secrets != "off" else {"status":"skipped","reason":"disabled_by_flag","findings":[]}
+    report["secrets"] = {"status":"pending","findings":[]} if args.credential_scan != "off" else {"status":"skipped","reason":"disabled_by_flag","findings":[]}
     report["rule_validation"] = rules
     report["coverage"] = coverage
     report["scan_status"] = coverage["status"]
@@ -384,16 +389,16 @@ def main():
         save_json(report_dir / f"{name}.json", scanner_evidence(name,results.get(name, {"status": "failed", "error": error})), key)
     save_json(report_dir / "findings.json", unified, key)
     policy_args = (args.fail_on, args.require_dependencies, args.require_validated_rules)
-    report["require_secrets"] = args.require_secrets
+    report["require_secrets"] = args.require_credential_scan
     if key and unified:
         report["ai"]["status"] = "pending"
     evaluate(report, *policy_args, final=False)
     save_json(report_dir / "ai_reviews.json", skipped, key)
     save_json(report_path, report, key)
 
-    if args.secrets != "off":
+    if args.credential_scan != "off":
         try:
-            report["secrets"] = detect(target, history=args.secrets=="history", timeout=args.scanner_timeout)
+            report["secrets"] = detect(target, history=args.credential_scan=="history", timeout=args.scanner_timeout)
         except Exception as exc:
             report["secrets"] = {"status":"failed","reason":type(exc).__name__,"findings":[]}
         evaluate(report, *policy_args, final=False)
@@ -441,16 +446,16 @@ def main():
             code = report["exit_code"] = 2
             print(f"SARIF export failed: {exc}", file=sys.stderr)
         save_json(report_path, report, key)
-    secret_result = report["secrets"]
+    credential_result = report["secrets"]
     dependency_result = report["dependencies"]
-    print(f"Secret scan {secret_result['status']} ({args.secrets})")
-    for scope,state in secret_result.get("scopes",{}).items():
+    print(f"Credential scan {credential_result['status']} ({args.credential_scan})")
+    for scope,state in credential_result.get("scopes",{}).items():
         if state!="completed":
             print(f"  {scope}: {state}")
     print(f"Dependency audit {dependency_result['status']} ({dependency_result.get('reason','')}). "
           f"{len(dependency_result.get('inputs',[]))} inputs, "
           f"{len(dependency_result.get('detections',[]))} advisory detections")
-    print(f"Execution {report['execution']['overall']}, policy {report['policy']['result']}, {len(report['logical_issues'])} logical issues, {len(unified)} scanner detections, {len(report['secrets']['findings'])} secret findings, {len(report['dependencies']['findings'])} advisories")
+    print(f"Execution {report['execution']['overall']}, policy {report['policy']['result']}, {len(report['logical_issues'])} logical issues, {len(unified)} scanner detections, {len(report['secrets']['findings'])} credential findings, {len(report['dependencies']['findings'])} advisories")
     print(json.dumps({"event":"scan_finished", "run_id":run_id, "report_path":str(report_path), "exit_code":code}))
     if code:
         raise SystemExit(code)

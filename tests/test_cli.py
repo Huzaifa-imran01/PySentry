@@ -5,6 +5,17 @@ import pytest
 from src import scanner
 
 
+@pytest.mark.parametrize("scope", ["directory", "history", "off"])
+def test_credential_scan_cli_aliases(scope):
+    parser = scanner.scan_help_parser()
+    required = scope != "off"
+    current = parser.parse_args(["--credential-scan", scope] + (["--require-credential-scan"] if required else []))
+    legacy = parser.parse_args(["--secrets", scope] + (["--require-secrets"] if required else []))
+    assert current == legacy
+    assert current.credential_scan == scope
+    assert current.require_credential_scan == required
+
+
 def test_cli_accepts_path_option(monkeypatch, tmp_path):
     """The --path argument should be accepted."""
 

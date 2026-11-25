@@ -127,7 +127,7 @@ def _secret_results(report, scan_root, source_root):
     for finding in report.get("secrets", {}).get("findings", []):
         uri = _uri(finding["file"], scan_root, source_root)
         if not uri:
-            raise ValueError("A secret finding is outside the selected SARIF source root")
+            raise ValueError("A credential finding is outside the selected SARIF source root")
         detector = finding["detector"]
         result = {
             "ruleId": f"secret/{detector}", "level": "warning",

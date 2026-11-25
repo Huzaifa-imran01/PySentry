@@ -8,7 +8,7 @@ Run from the project root:
 
 Interactive terminals prompt for a hidden Gemini key. Press Enter for basic scanning. A supplied key is validated before scanning using a small source-free generation request that may incur an API charge. Finding review sends selected finding metadata and locally screened source context to Google. Keys are held only in memory, never saved by the program.
 
-Use `--no-llm` to skip prompting and every Gemini request. Noninteractive runs default to basic scanning. CI can explicitly supply a secret through `--api-key-env GEMINI_API_KEY`; configure that variable in the CI secret store. The value is consumed from the process environment before scanner subprocesses run. Ambient keys are not automatically used. Never pass the secret as a command-line argument.
+Use `--no-llm` to skip prompting and every Gemini request. Noninteractive runs default to basic scanning. CI can explicitly supply a Gemini API key through `--api-key-env GEMINI_API_KEY`; configure that variable in your CI platform’s credential store. The value is consumed from the process environment before scanner subprocesses run. Ambient keys are not automatically used. Never pass the key as a command-line argument.
 
 Use `--model MODEL_ID` to override the default gemini-3.8-flash. Validation and reviews use the same model. Gemini requires the google-genai package in the project venv. If it is unavailable, basic scanning continues with an explicit reason.
 

@@ -174,7 +174,7 @@ jobs:
       - name: Validate Standard and scan the agent source
         run: |
           python -m src.benchmark --profile standard --validate
-          python -m src.scanner src --profile standard --require-validated-rules --no-llm --skip-dependencies --secrets off --total-timeout 1200 --sarif-root . --sarif agent-source.sarif
+          python -m src.scanner src --profile standard --require-validated-rules --no-llm --skip-dependencies --credential-scan off --total-timeout 1200 --sarif-root . --sarif agent-source.sarif
       - name: Upload completed source analysis and await processing
         uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
         with:
