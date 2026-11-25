@@ -69,7 +69,7 @@ def test_sdk_preflight_and_review_use_same_model(monkeypatch):
     assert provider.generate("secret", "chosen", "Reply with OK.", preflight=True) == "OK"
     assert factory.call_args.kwargs["api_key"] == "secret"
     assert client.models.generate_content.call_args.kwargs["model"] == "chosen"
-    assert client.models.generate_content.call_args.kwargs["config"].max_output_tokens == 16
+    assert client.models.generate_content.call_args.kwargs["config"].max_output_tokens == 1024
 
 
 def test_report_redacts_reflected_key(tmp_path):
@@ -120,15 +120,25 @@ def test_scan_failure_overwrites_stale_report(tmp_path, monkeypatch):
     assert report["ai"]["reason"] == "scan_failed"
 
 
-def test_successful_enrichment_and_group_limit(monkeypatch):
+def test_enrichment_reviews_every_group(monkeypatch):
     from src import llm_advisor
-    findings = [{"scanner":"bandit", "rule_id":"B602", "file":str(i), "line":1} for i in range(6)]
-    reviews = [{"status":"reviewed", "review":{"suggested_fix":"def f(): pass"}, "verification_status":"not_verified"} for _ in range(5)]
-    monkeypatch.setattr(llm_advisor,"review_all_findings",MagicMock(return_value=reviews))
+
+    findings = [
+        {"scanner": "bandit", "rule_id": "B602", "file": "sample.py", "line": line}
+        for line in range(1, 9)
+    ]
+    monkeypatch.setattr(llm_advisor, "get_code_context", lambda finding: "synthetic context")
+    review = MagicMock(return_value={"suggested_fix": "Pass arguments separately."})
+    monkeypatch.setattr(llm_advisor, "review_finding", review)
+
     report = ai_report(findings, "secret", "ready", "chosen")
-    assert report["reviewed"] == 5
-    assert report["reason"] == "review_limit"
-    assert report["unattempted_groups"] == 1
+
+    assert review.call_count == len(findings)
+    assert [result["finding"] for result in report["results"]] == findings
+    assert report["attempted"] == report["reviewed"] == len(findings)
+    assert report["reason"] == report["status"] == "completed"
+    assert report["unattempted_groups"] == 0
+    assert report["limit"] is None
     assert report["verification_status"] == "not_verified"
 
 

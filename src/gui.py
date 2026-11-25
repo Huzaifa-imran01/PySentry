@@ -13,6 +13,10 @@ from src.gui_support import (PROJECT_ROOT, ScanOptions, as_dict, dict_rows,
                              load_report, overview_text, run_scan)
 
 
+AUTO_DEPENDENCIES = "Auto-detect Dependency files"
+PROVIDED_DEPENDENCY_FILE = "Dependency file provided"
+
+
 def replace_text(widget, text):
     widget.configure(state="normal")
     widget.delete("1.0", "end")
@@ -28,6 +32,83 @@ def detail_text(row):
             value = json.dumps(value, indent=2, ensure_ascii=False)
         parts.append(f"{label}\n{value if value is not None else 'Not provided'}")
     return "\n\n".join(parts)
+
+
+class HoverTips:
+    """Show delayed help for a control or the row under the pointer in its dropdown."""
+
+    def __init__(self, root):
+        self.root = root
+        self.active = None
+        self.timer = None
+        self.window = None
+
+    def attach(self, widget, messages):
+        if isinstance(messages, str):
+            self._bind(widget, str(widget), lambda event: messages)
+            return
+
+        self._bind(widget, str(widget), lambda event: messages.get(widget.get()))
+
+        def attach_rows():
+            # Tk builds this listbox in Tcl when the dropdown first opens.
+            popup = widget.tk.call("ttk::combobox::PopdownWindow", widget)
+            listbox = f"{popup}.f.l"
+            if widget.tk.call("winfo", "exists", listbox):
+                def row_message(event):
+                    index = widget.tk.call(listbox, "nearest", event.y)
+                    return messages.get(widget.tk.call(listbox, "get", index))
+
+                self._bind(widget, listbox, row_message)
+            widget.configure(postcommand="")
+
+        widget.configure(postcommand=attach_rows)
+
+    def _bind(self, widget, path, message_for):
+        def hover(event):
+            message = message_for(event)
+            if self.active == (path, message):
+                return
+            self.hide()
+            if message:
+                self.active = (path, message)
+                self.timer = self.root.after(1000, self._show, path, message, event.y_root)
+
+        for sequence in ("<Enter>", "<Motion>"):
+            widget.bind_class(path, sequence, hover, add="+")
+        for sequence in ("<Leave>", "<ButtonPress>", "<KeyPress>", "<Unmap>", "<Destroy>", "<<ComboboxSelected>>"):
+            widget.bind_class(path, sequence, self.hide, add="+")
+
+    def _show(self, path, message, pointer_y):
+        self.timer = None
+        tkapp = self.root.tk
+        if not tkapp.call("winfo", "viewable", path):
+            self.hide()
+            return
+        tip = self.window = tk.Toplevel(self.root, takefocus=False)
+        tip.withdraw()
+        tip.overrideredirect(True)
+        tip.attributes("-topmost", True)
+        label = ttk.Label(tip, text=message, padding=(6, 3), relief="solid", borderwidth=1, wraplength=340)
+        label.pack()
+        # Keep the tooltip clear of the dropdown so nearby choices stay accessible.
+        left = int(tkapp.call("winfo", "rootx", path))
+        x = left + int(tkapp.call("winfo", "width", path)) + 6
+        if x + label.winfo_reqwidth() > self.root.winfo_screenwidth():
+            x = max(0, left - label.winfo_reqwidth() - 6)
+        y = max(0, min(pointer_y, self.root.winfo_screenheight() - label.winfo_reqheight()))
+        tip.geometry(f"+{x}+{y}")
+        tip.deiconify()
+
+    def hide(self, event=None):
+        self.active = None
+        if self.timer is not None:
+            self.root.after_cancel(self.timer)
+            self.timer = None
+        if self.window is not None:
+            if self.window.winfo_exists():
+                self.window.destroy()
+            self.window = None
 
 
 class DetailsTable(ttk.Frame):
@@ -90,7 +171,7 @@ class ReviewApp:
         self.target = tk.StringVar()
         self.key = tk.StringVar()
         self.model = tk.StringVar(value=MODEL)
-        self.dependency_mode = tk.StringVar(value="Discover project manifests")
+        self.dependency_mode = tk.StringVar(value=AUTO_DEPENDENCIES)
         self.dependency_input = tk.StringVar()
         self.search = tk.StringVar()
         self.severity = tk.StringVar(value="All severities")
@@ -99,19 +180,22 @@ class ReviewApp:
         self.advanced_visible = tk.BooleanVar(value=False)
         self.fail_on = tk.StringVar(value="none")
         self.require_deps = tk.BooleanVar()
-        self.profile = tk.StringVar(value="standard")
+        self.profile = tk.StringVar(value="default")
         self.secret_scope = tk.StringVar(value="directory")
         self.require_secrets = tk.BooleanVar()
         self.require_rules = tk.BooleanVar()
         self.limit_vars = {name: tk.StringVar(value=str(value)) for name, value in
                            (("max_file_bytes", 1000000), ("scanner_timeout", 120), ("max_files", 1000), ("total_timeout", 600))}
+        self.tooltips = HoverTips(root)
         self.inputs = []
         self.build()
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self.root.after(100, self.poll)
 
-    def input_widget(self, widget):
+    def input_widget(self, widget, tooltip=None):
         self.inputs.append(widget)
+        if tooltip is not None:
+            self.tooltips.attach(widget, tooltip)
         return widget
 
     def build(self):
@@ -148,7 +232,12 @@ class ReviewApp:
         dependency_box.grid(row=3, column=1, columnspan=3, sticky="ew")
         dependency_box.columnconfigure(1, weight=1)
         self.dep_combo = self.input_widget(ttk.Combobox(dependency_box, textvariable=self.dependency_mode, state="readonly", width=27,
-            values=("Discover project manifests", "Manifest file", "Installed packages folder", "Skip dependency audit")))
+            values=(AUTO_DEPENDENCIES, PROVIDED_DEPENDENCY_FILE, "Installed packages folder", "Skip dependency audit")), tooltip={
+                AUTO_DEPENDENCIES: "Automatically detect dependency files in the project and audit them (default)",
+                PROVIDED_DEPENDENCY_FILE: "Audit your selected pinned requirements file or supported lockfile.",
+                "Installed packages folder": "Scan installed package versions in your selected folder",
+                "Skip dependency audit": "Skip scanning packages and dependencies",
+            })
         self.dep_combo.grid(row=0, column=0, padx=(0, 8))
         self.dep_combo.bind("<<ComboboxSelected>>", self.dependency_changed)
         self.dep_entry = self.input_widget(ttk.Entry(dependency_box, textvariable=self.dependency_input))
@@ -161,25 +250,45 @@ class ReviewApp:
         policy.grid(row=4, column=0, columnspan=4, sticky="w", pady=(7, 0))
         ttk.Label(policy, text="Fail on severity").pack(side="left")
         self.policy_combo = self.input_widget(ttk.Combobox(policy, textvariable=self.fail_on,
-            values=("none", "low", "medium", "high"), width=8, state="readonly"))
+            values=("none", "low", "medium", "high"), width=8, state="readonly"), tooltip={
+                "none": "reports findings without failing security policy",
+                "low": "Fail the security policy for source findings rated Low or higher.",
+                "medium": "Fail the security policy for source findings rated Medium or higher.",
+                "high": "Fail the security policy for source findings rated High or higher.",
+            })
         self.policy_combo.pack(side="left", padx=6)
-        for label, variable in (("Require dependency audit", self.require_deps), ("Require validated rules", self.require_rules)):
-            self.input_widget(ttk.Checkbutton(policy, text=label, variable=variable)).pack(side="left")
+        for label, variable, message in (
+            ("Require dependency audit", self.require_deps, "Require the dependency audit to complete successfully."),
+            ("Require validated rules", self.require_rules, "Require current validation for the selected rule profile."),
+        ):
+            self.input_widget(ttk.Checkbutton(policy, text=label, variable=variable), tooltip=message).pack(side="left")
         scope = ttk.Frame(options)
         scope.grid(row=5, column=0, columnspan=4, sticky="w")
         self.scope_combos = []
-        for label, variable, values in (("Rule profile", self.profile, ("basic","standard","deep")),
-                                        ("Secret scan", self.secret_scope, ("directory","history","off"))):
+        for label, variable, tips in (
+            ("Rule profile", self.profile, {
+                "basic": "Uses a small set of rules for common risks",
+                "default": "Uses the standard set of Python security rules",
+                "deep": "Default scan + framework-specific checks for risks",
+            }),
+            ("Credential scan", self.secret_scope, {
+                "directory": "Check current files for exposed credentials",
+                "history": "Check current files and Git history for exposed credentials",
+                "off": "Skip the dedicated credential scan",
+            }),
+        ):
             ttk.Label(scope, text=label).pack(side="left")
-            combo = self.input_widget(ttk.Combobox(scope, textvariable=variable, values=values, state="readonly", width=10))
+            combo = self.input_widget(ttk.Combobox(scope, textvariable=variable, values=tuple(tips), state="readonly", width=10), tooltip=tips)
             combo.pack(side="left", padx=6)
             self.scope_combos.append(combo)
-        self.input_widget(ttk.Checkbutton(scope, text="Require secret scan", variable=self.require_secrets)).pack(side="left")
+        self.input_widget(ttk.Checkbutton(scope, text="Require credential scan", variable=self.require_secrets),
+                          tooltip="Require the credential scan to complete successfully.").pack(side="left")
         controls = ttk.Frame(shell)
         controls.pack(fill="x", pady=9)
         self.scan_button = ttk.Button(controls, text="Start scan", command=self.start_scan)
         self.scan_button.pack(side="left")
-        self.input_widget(ttk.Checkbutton(controls, text="Advanced options", variable=self.advanced_visible, command=self.toggle_advanced)).pack(side="left", padx=14)
+        self.input_widget(ttk.Checkbutton(controls, text="Advanced options", variable=self.advanced_visible, command=self.toggle_advanced),
+                          tooltip="Show or hide scan limits and SARIF export options.").pack(side="left", padx=14)
         self.progress = ttk.Progressbar(controls, mode="indeterminate", length=160)
         self.progress.pack(side="right")
         self.advanced = ttk.LabelFrame(shell, text="Scan limits and export options", padding=8)
@@ -210,7 +319,7 @@ class ReviewApp:
         self.search.trace_add("write", self.filter_findings)
         self.severity.trace_add("write", self.filter_findings)
         self.issues_table = self.table_tab("Logical issues", [("category","Category",230),("severity","Severity",90),("evidence","Detections",80),("file","File",280),("line","Line",50)])
-        self.secrets_table = self.table_tab("Secrets", [("detector","Detector",200),("scope","Scope",90),("file","File",280),("line","Line",50)])
+        self.secrets_table = self.table_tab("Credentials", [("detector","Detector",200),("scope","Scope",90),("file","File",280),("line","Line",50)])
         self.ai_table = self.table_tab("AI reviews", [("status", "Status", 95), ("rule", "Rule", 160),
             ("file", "File", 270), ("line", "Line", 55), ("fix", "Fix classification", 190), ("related", "Related findings", 110)])
         self.dep_table = self.table_tab("Dependency advisories", [("package", "Package", 180), ("version", "Version", 100),
@@ -240,8 +349,8 @@ class ReviewApp:
             "Using the desktop scanner\n\n"
             "Choose Browse file or Browse folder, select the checks you want, then click Start scan. "
             "Leave the Gemini key blank for a basic report. Use Model to select a Gemini model your key can access.\n\n"
-            "Dependencies lets you discover manifests, select one file, select installed packages, or skip auditing. "
-            "Rule profile, Secret scan, Fail on severity and the Require checkboxes correspond to the options below. "
+            "Dependencies lets you auto-detect dependency files, provide a dependency file, select installed packages, or skip auditing. "
+            "Rule profile, Credential scan, Fail on severity and the Require checkboxes correspond to the options below. "
             "Advanced options contains the size, file count and time limits and the optional SARIF repository root.\n\n"
             "Follow progress in Messages. Overview explains execution and policy outcomes. Select a row in a "
             "results tab to inspect its evidence. Use Open report to revisit a run, Export JSON to save a copy, "
@@ -273,7 +382,7 @@ class ReviewApp:
         if path: self.target.set(path)
 
     def dependency_changed(self, event=None):
-        enabled = self.dependency_mode.get() in ("Manifest file", "Installed packages folder") and not self.busy
+        enabled = self.dependency_mode.get() in (PROVIDED_DEPENDENCY_FILE, "Installed packages folder") and not self.busy
         self.dep_entry.configure(state="normal" if enabled else "disabled")
         self.dep_browse.configure(state="normal" if enabled else "disabled")
 
@@ -281,7 +390,7 @@ class ReviewApp:
         if self.dependency_mode.get() == "Installed packages folder":
             path = filedialog.askdirectory(parent=self.root, title="Choose target project's site-packages")
         else:
-            path = filedialog.askopenfilename(parent=self.root, title="Choose requirements or lockfile", filetypes=[("Dependency manifests", "*.txt *.lock *.toml"), ("All files", "*.*")])
+            path = filedialog.askopenfilename(parent=self.root, title="Choose requirements or lockfile", filetypes=[("Dependency files", "*.txt *.lock *.toml"), ("All files", "*.*")])
         if path: self.dependency_input.set(path)
 
     def toggle_advanced(self):
@@ -292,17 +401,18 @@ class ReviewApp:
 
     def read_options(self):
         mode = self.dependency_mode.get()
-        requirements = self.dependency_input.get().strip() if mode == "Manifest file" else ""
+        requirements = self.dependency_input.get().strip() if mode == PROVIDED_DEPENDENCY_FILE else ""
         installed = self.dependency_input.get().strip() if mode == "Installed packages folder" else ""
-        if mode in ("Manifest file", "Installed packages folder") and not self.dependency_input.get().strip():
+        if mode in (PROVIDED_DEPENDENCY_FILE, "Installed packages folder") and not self.dependency_input.get().strip():
             raise ValueError("Choose the dependency input, or switch to automatic detection.")
         try:
             limits = {name: (int(var.get()) if name in ("max_file_bytes", "max_files") else float(var.get()))
                       for name, var in self.limit_vars.items()}
         except ValueError:
             raise ValueError("Scan limits must be numbers; file counts and byte sizes must be integers.") from None
+        profile = self.profile.get()
         options = ScanOptions(self.target.get().strip(), self.model.get().strip(), mode == "Skip dependency audit", requirements, installed, **limits, fail_on=self.fail_on.get(),
-                              profile=self.profile.get(), secrets=self.secret_scope.get(), require_secrets=self.require_secrets.get(), require_dependencies=self.require_deps.get(), require_validated_rules=self.require_rules.get())
+                              profile="standard" if profile == "default" else profile, secrets=self.secret_scope.get(), require_secrets=self.require_secrets.get(), require_dependencies=self.require_deps.get(), require_validated_rules=self.require_rules.get())
         options.validate()
         return options
 
@@ -360,7 +470,7 @@ class ReviewApp:
         self.report_path = Path(path)
         ai = as_dict(report.get("ai"))
         deps = as_dict(report.get("dependencies"))
-        self.summary.set(f"Execution: {report.get('execution', {}).get('overall', 'unrecorded')} | Policy: {report.get('policy', {}).get('result', 'unrecorded')} | Source: {report.get('scan_status', '?')}   |   Logical issues: {len(report['logical_issues']) if 'logical_issues' in report else 'unrecorded'} | Detections: {len(report['findings'])} | Secrets: {report.get('secrets',{}).get('status','unrecorded')}   |   AI: {ai.get('status', '?')}   |   Dependencies: {deps.get('status', '?')}")
+        self.summary.set(f"Execution: {report.get('execution', {}).get('overall', 'unrecorded')} | Policy: {report.get('policy', {}).get('result', 'unrecorded')} | Source: {report.get('scan_status', '?')}   |   Logical issues: {len(report['logical_issues']) if 'logical_issues' in report else 'unrecorded'} | Detections: {len(report['findings'])} | Credential scan: {report.get('secrets',{}).get('status','unrecorded')}   |   AI: {ai.get('status', '?')}   |   Dependencies: {deps.get('status', '?')}")
         replace_text(self.overview, overview_text(report))
         replace_text(self.raw, json.dumps(report, indent=2, ensure_ascii=False))
         self.filter_findings()

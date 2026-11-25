@@ -35,7 +35,7 @@ class ScanOptions:
 
     def validate(self):
         if self.require_secrets and self.secrets == "off":
-            raise ValueError("Enable secret scanning when it is required.")
+            raise ValueError("Enable credential scanning when it is required.")
         if self.require_dependencies and self.skip_dependencies:
             raise ValueError("A required dependency audit cannot be skipped.")
         path = Path(self.target).expanduser()
@@ -170,18 +170,20 @@ def overview_text(report):
     lines += ["", "Execution: " + execution.get("overall", "unrecorded (legacy report)"),
               "Security policy: " + policy.get("result", "unrecorded (legacy report)"),
               "Severity threshold: " + policy.get("fail_on", "unrecorded"),
-              "Secret scan: " + execution.get("secrets", "unrecorded")]
+              "Credential scan: " + execution.get("secrets", "unrecorded")]
     lines.extend(policy.get("reasons", []))
     for scope,status in report.get("secrets",{}).get("scopes",{}).items():
-        lines.append(f"Secret scan ({scope}): {status}")
+        lines.append(f"Credential scan ({scope}): {status}")
     for item in deps.get("inputs",[]):
         lines.append(f"{item['path']} ({item['resolution']}): {item['status']} / {item['reason']}")
     lines.extend("Overlapping input skipped: " + p for p in deps.get("shadowed",[]))
     lines.extend(deps.get("errors",[]))
     if rules.get("effective_profile"):
-        lines += [f"Semgrep profile: {rules['effective_profile']} ({rules['effective_rule_count']} rules)",
+        profile = rules["effective_profile"]
+        profile_label = "default" if profile == "standard" else profile
+        lines += [f"Semgrep profile: {profile_label} ({rules['effective_rule_count']} rules)",
                   f"Configuration: {rules['active_config']}", f"Bundle: {rules['bundle_sha256']}"]
-        if rules["effective_profile"] == "fallback":
+        if profile == "fallback":
             lines.insert(0, "WARNING: Reduced Semgrep coverage. " + str(rules.get("reason")))
     completeness = coverage.get("completeness")
     if isinstance(completeness, (int, float)):

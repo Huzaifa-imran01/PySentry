@@ -14,7 +14,7 @@ Use `--model MODEL_ID` to override the default gemini-3.8-flash. Validation and 
 
 `reports/<run_id>/report.json` combines basic evidence and optional AI review. It includes fingerprints, scanner versions and enabled rules, completion status, counts, original findings, and labelled predefined guidance. `bandit.json`, `semgrep.json`, and `findings.json` retain scanner evidence. `ai_reviews.json` is refreshed even when AI is skipped. Basic evidence is saved before finding review starts.
 
-Authentication, permission, quota/rate-limit, model availability, network, and server errors have distinct reason codes. Some malformed requests or credentials are reported as invalid_request_or_credential when the provider offers no more specific classification. A successful preflight does not guarantee later availability. Reviews preserve individual failures and are capped at five unique groups, with remaining groups counted.
+Authentication, permission, quota/rate-limit, model availability, network, and server errors have distinct reason codes. Some malformed requests or credentials are reported as invalid_request_or_credential when the provider offers no more specific classification. A successful preflight does not guarantee later availability. Once validation succeeds, PySentry attempts every unique finding group. It records individual failures and continues to the next group.
 
 Inspect the coverage section for failed, skipped and partially analyzed files. Valid findings from a scanner are retained when a second scanner fails. Incomplete mandatory checks exit 2. Gemini failures are recorded per review and leave the source findings available.
 

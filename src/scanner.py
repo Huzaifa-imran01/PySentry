@@ -251,7 +251,7 @@ Related commands
                          "Noninteractive scanning defaults to basic review without an explicit credential.")
     ai.add_argument("--model", default=MODEL,
                     help="Gemini model for access checks and reviews (default: %(default)s). "
-                         "Up to five finding groups receive explanations and proposed fixes. "
+                         "AI review attempts every unique finding group. "
                          "Selected source context is masked and screened before transmission. "
                          "Unavailable credentials or an unsuccessful screen leave basic findings available.")
 

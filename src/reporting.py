@@ -102,13 +102,13 @@ def ai_report(findings, api_key, reason, model):
         results = review_all_findings(findings, api_key=api_key, model=model)
         failed = sum(r["status"] != "reviewed" for r in results)
         status = "failed" if failed == len(results) else "partial" if failed or len(groups) > len(results) else "completed"
-        reason = "review_failures" if failed else "review_limit" if len(groups) > len(results) else "completed"
+        reason = "review_failures" if failed else "incomplete_review" if len(groups) > len(results) else "completed"
     withheld = sum(r["status"] == "skipped" for r in results)
     if results and withheld == len(results):
         status,reason = "skipped","cloud_context_redaction_incomplete"
     reviewed = sum(r["status"] == "reviewed" for r in results)
     return {"provider": "gemini", "model": model, "status": status, "reason": reason, "credential_status": credential_status,
-            "total_findings": len(findings), "unique_groups": len(groups), "limit": 5,
+            "total_findings": len(findings), "unique_groups": len(groups), "limit": None,
             "attempted": len(results), "reviewed": reviewed, "skipped":withheld, "failed": len(results)-reviewed-withheld,
             "unattempted_groups": len(groups)-len(results), "results": results,
             "verification_status": "not_verified"}

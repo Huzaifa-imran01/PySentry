@@ -155,20 +155,17 @@ def group_duplicate_findings(findings):
             for issue in logical_issues(findings)]
 
 
-def review_all_findings(findings, limit=5, api_key=None, model=MODEL):
-    """Review multiple findings without stopping on one failure."""
+def review_all_findings(findings, *, api_key=None, model=MODEL):
+    """Review every finding group, continuing after individual failures."""
 
     if not isinstance(findings, list):
         raise ValueError("Findings must be a list")
-
-    if not isinstance(limit, int) or limit < 1:
-        raise ValueError("Review limit must be a positive integer")
 
     results = []
 
     groups = group_duplicate_findings(findings)
 
-    for index, group in enumerate(groups[:limit], start=1):
+    for index, group in enumerate(groups, start=1):
         finding = group["primary"]
         print(f"Reviewing finding {index}...")
 

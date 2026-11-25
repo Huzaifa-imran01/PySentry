@@ -50,7 +50,7 @@ def generate(api_key, model, prompt, *, schema=None, system=None, preflight=Fals
     if system:
         config["system_instruction"] = system
     if preflight:
-        config["max_output_tokens"] = 16
+        config["max_output_tokens"] = 1024
     try:
         with genai.Client(api_key=api_key, vertexai=False,
                           http_options=types.HttpOptions(timeout=20000 if preflight else 120000)) as client:

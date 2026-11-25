@@ -144,7 +144,7 @@ def test_desktop_report_views_and_filtering(tmp_path, monkeypatch):
         app.display_report(report,"test-report.json")
         assert len(app.issues_table.tree.get_children())==len(app.secrets_table.tree.get_children())==1
         root.update_idletasks()
-        assert {"Logical issues", "Secrets"}.issubset({app.notebook.tab(tab,"text") for tab in app.notebook.tabs()})
+        assert {"Logical issues", "Credentials"}.issubset({app.notebook.tab(tab,"text") for tab in app.notebook.tabs()})
         assert len(app.finding_table.tree.get_children())==1
         assert len(app.ai_table.tree.get_children())==1
         assert len(app.dep_table.tree.get_children())==1
@@ -179,8 +179,56 @@ def test_desktop_report_views_and_filtering(tmp_path, monkeypatch):
         assert app.notebook.tab(app.notebook.select(),"text")=="Messages"
         assert thread.call_args.kwargs["args"][1]=="test-key"
         options = thread.call_args.kwargs["args"][0]
+        assert app.profile.get() == "default" and options.profile == "standard"
         assert options.fail_on == "high" and options.require_validated_rules
         thread.return_value.start.assert_called_once()
         app.set_busy(False)
+        check_desktop_hover_tips(app)
     finally:
         root.destroy()
+
+
+def check_desktop_hover_tips(app):
+    import tkinter as tk
+    from tkinter import ttk
+
+    root = app.root
+    root.deiconify()
+
+    def wait_for_hover():
+        elapsed = tk.BooleanVar(root)
+        root.after(1050, elapsed.set, True)
+        root.wait_variable(elapsed)
+
+    root.update()
+    combo = app.scope_combos[0]
+    root.tk.call("ttk::combobox::Post", combo)
+    root.update()
+    popup = root.tk.call("ttk::combobox::PopdownWindow", combo)
+    listbox = f"{popup}.f.l"
+    if not root.tk.call("winfo", "exists", listbox):
+        root.tk.call("ttk::combobox::Unpost", combo)
+        return
+
+    def hover_row(index):
+        _, y, _, height = root.tk.call(listbox, "bbox", index)
+        root.tk.call("event", "generate", listbox, "<Motion>", "-x", 4, "-y", y + height // 2)
+
+    hover_row(2)
+    assert app.tooltips.window is None
+    wait_for_hover()
+    assert app.tooltips.window.winfo_children()[0].cget("text") == "Default scan + framework-specific checks for risks"
+    assert combo.get() == "default"
+    hover_row(0)
+    assert app.tooltips.window is None
+    root.tk.call("ttk::combobox::Unpost", combo)
+    root.update()
+    assert app.tooltips.timer is None
+
+    checkbox = next(w for w in app.inputs if isinstance(w, ttk.Checkbutton) and w.cget("text") == "Require credential scan")
+    checkbox.event_generate("<Enter>")
+    wait_for_hover()
+    assert app.tooltips.window.winfo_children()[0].cget("text") == "Require the credential scan to complete successfully."
+    checkbox.event_generate("<Leave>")
+    assert app.tooltips.window is None
+    assert not app.require_secrets.get()
